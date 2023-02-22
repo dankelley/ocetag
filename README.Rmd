@@ -8,7 +8,7 @@ A data file
 cp ~/data/arctic/beaufort/2012/d201211_0048.cnv .
 ```
 ```{r}
-deriv <- function(x, y)
+D <- function(x, y)
 {
     dydx <- diff(y) / diff(x)
     c(dydx, tail(dydx, 1))
@@ -17,11 +17,11 @@ library(oce)
 d <- read.oce("d201211_0048.cnv")
 ds <- subset(d, 250 < pressure & pressure <= 350)
 plotProfile(ds, xtype="temperature")
-plotProfile(ds, xtype=deriv(ds[["pressure"]], ds[["temperature"]]))
+plotProfile(ds, xtype=D(ds[["pressure"]], ds[["temperature"]]), xlab="dT/dp")
 plotProfile(ds, xtype="salinity")
-plotProfile(ds, xtype=deriv(ds[["pressure"]], ds[["salinity"]]))
+plotProfile(ds, xtype=D(ds[["pressure"]], ds[["salinity"]]), xlab="dS/dp")
 plotProfile(ds, xtype="density")
-plotProfile(ds, xtype=deriv(ds[["pressure"]], ds[["density"]]))
+plotProfile(ds, xtype=D(ds[["pressure"]], ds[["density"]]), xlab="d(rho)/dp")
 plotProfile(ds, xtype="Rrho")
 plotTS(ds)
 ```
