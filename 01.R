@@ -8,6 +8,7 @@ library(shinyBS)
 library(shinycssloaders)
 library(oce)
 library(DBI)
+library(RSQLite)
 
 helpMouse <- "<p><i>Mouse</i></p>
 <ul>
@@ -45,6 +46,35 @@ dmsg <- function(...) {
 
 dprint <- function(...) {
     if (debug > 0) print(file=stderr(), ...)
+}
+
+createDatabase <- function(dbname=getDatabaseName())
+{
+    if (!file.exists(dbname)) {
+        dmsg("creating '", dbname, "'\n")
+        con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
+        dmsg("dan 1\n")
+        RSQLite::dbCreateTable(con, "tags",
+            c("file"="TEXT",
+                level="INT",
+                tag="INT",
+                analysisName="TEXT",
+                analysisTime="TIMESTAMP"))
+        dmsg("dan 2\n")
+        #RSQLite::dbWriteTable(con, "tags")
+        dmsg("dan 3\n")
+        RSQLite::dbDisconnect(con)
+        dmsg("dan 4\n")
+    }
+}
+
+
+getTags <- function(dbname=getDatabaseName())
+{
+    con <- dbConnect(RSQLite::SQLite(), dbname)
+    tags <- RSQLite::dbReadTable(con, "tags")
+    RSQLite::dbDisconnect(con)
+    tags
 }
 
 findNearestIndex <- function(hover, data, view)
@@ -137,14 +167,30 @@ ui <- fluidPage(
                     selected="o")))),
     wellPanel(
         fluidRow(
+            column(12, uiOutput("tagMsg")),
             column(12, uiOutput("levelMsg")))),
     fluidRow(
         uiOutput("plotPanel")))
 
+getUserName <- function()
+{
+    # FIXME: maybe use Sys.info()[["user"]] ???
+    res <- if (.Platform$OS.type == "windows") Sys.getenv("USERNAME") else Sys.getenv("USER")
+    if (is.null(res) || 0L == nchar(res))
+        res <- "unknown"
+    res
+}
+
+getDatabaseName <- function(prefix="~/ctd_tag")
+{
+    file.path(paste0(prefix, "_", getUserName(), ".db"))
+}
+
 server <- function(input, output, session) {
+    createDatabase()
     file <- "d201211_0048.cnv"
     ctd <- read.oce(file)
-    dbname <<- "dan.db"
+    dbname <<- "ctd.db"
     data <- with(ctd@data, list(pressure=pressure, salinity=salinity, temperature=temperature))
     data$sigthe <- swSigmaTheta(ctd, eos="unesco")
     state <- reactiveValues(
@@ -253,6 +299,16 @@ server <- function(input, output, session) {
                 }
             } else {
                 "Move cursor over plot to inspect data"
+            }
+        })
+
+    output$tagMsg <- renderText(
+        {
+            tags <- getTags()
+            if (length(tags$tag) > 0L) {
+                paste(length(tags$tag), "tags")
+            } else {
+                "no tags yet"
             }
         })
 
