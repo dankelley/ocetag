@@ -21,7 +21,7 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <ul>
 <li> <b>i</b> zoom in near mouse</li>
 <li> <b>o</b> zoom out</li>
-<!-- <li> <b>O</b> (upper-case <b>o</b>) zoom all the way out</li> -->
+<li> <b>O</b> (upper-case 'o') zoom all the way out</li>
 <li> <b>j</b> move down in water column</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
@@ -78,7 +78,7 @@ getTags <- function(file=NULL, dbname=getDatabaseName())
     tags <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
-        if ("tags" %in% dbListTables(con)) {
+        if (RSQLite::dbExistsTable(con, "tags")) {
             tags <- RSQLite::dbReadTable(con, "tags")
             RSQLite::dbDisconnect(con)
             if (!is.null(file)) {
@@ -194,7 +194,7 @@ ui <- fluidPage(
             column(2, selectInput("view", label=NULL,
                     choices=c("S profile"="S profile", "T profile"="T profile", "TS"="TS"),
                     selected="T profile")),
-            column(2, selectInput("yProfile", label=NULL,
+            column(3, selectInput("yProfile", label=NULL,
                     choices=c("pressure"="pressure", "sigma-theta"="sigmaTheta"),
                     selected="pressure")),
             column(2, selectInput("plotType", label=NULL,
@@ -302,6 +302,9 @@ server <- function(input, output, session) {
                 span <- diff(limits)
                 limits <- limitsTrim(limits + c(-span, span), state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
+            } else if (key == "O") {
+                dmsg("responding to 'O' click to return to full-scale\n")
+                state$visible <- rep(TRUE, state$ndata)
             } else if (key == "j") {
                 dmsg("responding to 'j' click for moving down in water column\n")
                 if (!tail(state$visible, 1)) {
@@ -437,6 +440,13 @@ server <- function(input, output, session) {
                     points(state$data$salinity[state$level], state$data$temperature[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
+            tags <- getTags(state$file)
+            if (length(tags$tag) > 0) {
+                with(default$tag,
+                    points(state$data$salinity[tags$level], state$data$temperature[tags$level],
+                        cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
+            }
+ 
         } else {
             plot(0:1, 0:1, xlab="", ylab="", axes=FALSE, type="n")
             text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
