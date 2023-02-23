@@ -94,14 +94,12 @@ removeTag <- function(file=NULL, level=NULL, dbname=NULL)
     dmsg("removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
     con <- dbConnect(RSQLite::SQLite(), dbname)
     tags <- RSQLite::dbReadTable(con, "tags")
-    remove <- tags$file == file & tags$level == level
-    if (any(remove)) {
-        #dprint(remove)
-        #dmsg(" BEFORE\n")
-        #dprint(tags)
+    remove <- which(tags$file == file & tags$level == level)
+    if (length(remove)) {
+        dmsg("will remove ", paste(remove, collapse=" "), "-th tag\n")
+        dmsg(" BEFORE levels are: ", paste(tags$level, collapse=" "), "\n")
         tags <- tags[-remove, ]
-        #dmsg(" AFTER\n")
-        #dprint(tags)
+        dmsg(" AFTER  levels are: ", paste(tags$level, collapse=" "), "\n")
         RSQLite::dbWriteTable(con, "tags", tags, overwrite=TRUE)
     }
     RSQLite::dbDisconnect(con)
@@ -370,11 +368,12 @@ server <- function(input, output, session) {
             } else {
                 "no tags yet"
             }
-            focusMsg <- if (focusIsTagged()) " (focus is tagged)" else ""
+            focusMsg <- if (focusIsTagged()) paste0(" (focus, at level ", state$level, ", is tagged)") else ""
             paste0(file, ": ", tagMsg, focusMsg)
         })
 
     output$plotPanel <- renderUI({
+        state$step # cause a shiny update
         plotOutput("plot",
             brush=brushOpts("brush", delay=1000, resetOnNew=TRUE),
             hover="hover",
@@ -388,7 +387,7 @@ server <- function(input, output, session) {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$temperature[state$visible]
             y <- data$yProfile[state$visible]
-            plot(x, y, ylim=rev(range(y)),
+            plot(x, y, ylim=rev(range(y)), yaxs="i",
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
             state$usr <<- par("usr")
@@ -412,7 +411,7 @@ server <- function(input, output, session) {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$salinity[state$visible]
             y <- state$data$yProfile[state$visible]
-            plot(x, y, ylim=rev(range(y)),
+            plot(x, y, ylim=rev(range(y)), yaxs="i",
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
             state$usr <<- par("usr")
