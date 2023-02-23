@@ -28,14 +28,23 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <li><i>Tagging</i></li>
 <ul>
 <li> <b>0</b> through <b>9</b> tag the focus point with given numeric code</li>
-<li> <b>u</b> remove tag on focus point</li>
+<li> <b>x</b> remove tag on focus point</li>
 </ul>
 </ul>
 "
 
 overallHelp <- c(helpMouse, helpKeyboard)
 
-dbname <- "initial value, which will be overwritten"
+#dbname <- "initial value, which will be overwritten"
+
+pluralize <- function(n=1, singular="item", plural=NULL)
+{
+    singular <- paste(n, singular)
+    if (is.null(plural)) {
+        plural <- paste0(singular, "s")
+    }
+    if (n == 1L) singular else plural
+}
 
 msg <- function(...) {
     cat(file=stderr(), ..., sep="")
@@ -54,40 +63,56 @@ createDatabase <- function(dbname=getDatabaseName())
     if (!file.exists(dbname)) {
         dmsg("creating '", dbname, "'\n")
         con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
-        dmsg("dan 1\n")
         RSQLite::dbCreateTable(con, "tags",
             c("file"="TEXT",
                 level="INT",
                 tag="INT",
                 analyst="TEXT",
                 analysisTime="TIMESTAMP"))
-        dmsg("dan 2\n")
-        #RSQLite::dbWriteTable(con, "tags")
         RSQLite::dbDisconnect(con)
-        dmsg("dan 3\n")
     }
 }
 
 getTags <- function(file=NULL, dbname=getDatabaseName())
 {
+    tags <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
-        tags <- RSQLite::dbReadTable(con, "tags")
-        if (!is.null(file)) {
-            dmsg("should focus only on file \"", state$file, "\"\n")
+        if ("tags" %in% dbListTables(con)) {
+            tags <- RSQLite::dbReadTable(con, "tags")
+            RSQLite::dbDisconnect(con)
+            if (!is.null(file)) {
+                tags <- tags[tags$file == file, ]
+            }
         }
-        RSQLite::dbDisconnect(con)
-        tags
-    } else {
-        NULL
     }
+    tags
 }
+
+removeTag <- function(file=NULL, level=NULL, dbname=NULL)
+{
+    dmsg("removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
+    con <- dbConnect(RSQLite::SQLite(), dbname)
+    tags <- RSQLite::dbReadTable(con, "tags")
+    remove <- tags$file == file & tags$level == level
+    if (any(remove)) {
+        #dprint(remove)
+        #dmsg(" BEFORE\n")
+        #dprint(tags)
+        tags <- tags[-remove, ]
+        #dmsg(" AFTER\n")
+        #dprint(tags)
+        RSQLite::dbWriteTable(con, "tags", tags, overwrite=TRUE)
+    }
+    RSQLite::dbDisconnect(con)
+}
+
 
 saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL)
 {
     # no checking on NULL; add that if we want to generalize
     df <- data.frame(file=file, level=level, tag=tag, analyst=analyst, analysisTime=Sys.time())
-    dprint(df)
+    #dprint(df)
     #dmsg("saveTag(file=", file, ", level=", level, ", tag=", tag, ", analyst=", analyst, ", dbname=", dbname, ")")
     con <- dbConnect(RSQLite::SQLite(), dbname)
     RSQLite::dbAppendTable(con, "tags", df)
@@ -96,27 +121,28 @@ saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL)
 
 findNearestLevel <- function(x, y, usr, data, view)
 {
-    dmsg("findNearestLevel(", x, ",", y, "...)\n")
-    dmsg("  ", vectorShow(usr))
+    dmsg("findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
+    #dmsg("  ", vectorShow(usr))
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
-    dmsg("  ", vectorShow(dx2))
-    dmsg("  ", vectorShow(dy2))
+    #dmsg("  ", vectorShow(dx2))
+    #dmsg("  ", vectorShow(dy2))
     if (view == "T profile") {
         d2 <- (x - data$temperature)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        dmsg(sprintf("  T=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+        #dmsg(sprintf("  T=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "S profile") {
         d2 <- (x - data$salinity)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "TS") {
         d2 <- (x - data$salinity)^2/dx2 + (y - data$temperature)^2/dy2
         nearest <- which.min(d2)
-        dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else {
         stop("view=\"", view, "\" is not handled yet")
     }
+    dmsg("  returning ", nearest, "\n")
     nearest
 }
 
@@ -156,11 +182,11 @@ default <- list(
     tagged=list(cex=1.4, col=2, lwd=2, pch=20),
     #TS=list(cex=1, col="gray", lwd=2, pch=20, type="o"),
     cex=1.0,
-    focus=list(cex=2, col="purple", lwd=2, pch=1, minimumSpan=10),
-    lwdRect=1)
+    focus=list(cex=2, col="purple", lwd=2, pch=3, minimumSpan=10L),
+    tag=list(cex=2, lwd=2, pch=1))
 
 ui <- fluidPage(
-    headerPanel(title="", windowTitle=""),
+    #headerPanel(title="", windowTitle=""),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style="background:#e6f3ff;cursor:crosshair;",
     wellPanel(
@@ -173,13 +199,14 @@ ui <- fluidPage(
             column(2, selectInput("yProfile", label=NULL,
                     choices=c("pressure"="pressure", "sigma-theta"="sigmaTheta"),
                     selected="pressure")),
-            column(3, selectInput("plotType", label=NULL,
+            column(2, selectInput("plotType", label=NULL,
                     choices=c("line"="l", "points"="p", "line+points"="o"),
+                #selected="o"))),
                 selected="o")))),
     wellPanel(
         fluidRow(
-            column(12, uiOutput("tagMsg")),
-            column(12, uiOutput("levelMsg")))),
+            column(12, uiOutput("tagMsg")))),
+            #column(12, uiOutput("levelMsg")))),
     fluidRow(
         uiOutput("plotPanel")))
 
@@ -187,8 +214,9 @@ getUserName <- function()
 {
     # FIXME: maybe use Sys.info()[["user"]] ???
     res <- if (.Platform$OS.type == "windows") Sys.getenv("USERNAME") else Sys.getenv("USER")
-    if (is.null(res) || 0L == nchar(res))
+    if (is.null(res) || 0L == nchar(res)) {
         res <- "unknown"
+    }
     res
 }
 
@@ -201,12 +229,13 @@ server <- function(input, output, session) {
     createDatabase()
     file <- "~/data/arctic/beaufort/2012/d201211_0048.cnv"
     ctd <- read.oce(file)
-    dbname <<- "ctd.db"
-    data <- with(ctd@data, list(pressure=pressure, salinity=salinity, temperature=temperature))
+    #dbname <<- "ctd.db"
+    data <- list(pressure=ctd@data$pressure, salinity=ctd@data$salinity, temperature=ctd@data$temperature)
     data$yProfile <- data$pressure
     data$ylabProfile <- resizableLabel("p")
     data$sigmaTheta <- swSigmaTheta(ctd, eos="unesco")
     state <- reactiveValues(
+        step=0L,
         file=file,
         analyst=getUserName(),
         ctd=ctd,
@@ -216,6 +245,10 @@ server <- function(input, output, session) {
         usr=c(0, 1, 0, 1),
         visible=rep(TRUE, length(data$pressure)) # all points visible at the start
         )
+
+    focusIsTagged <- function() {
+        !is.null(state$level) && (state$level %in% getTags(state$file)$level)
+    }
 
     observeEvent(input$help,
         {
@@ -231,46 +264,32 @@ server <- function(input, output, session) {
     observeEvent(input$click,
         {
             state$level  <- findNearestLevel(input$click$x, input$click$y, state$usr, state$data, input$view)
-            message("state$level =", state$level )
-            #dmsg(sprintf("clicked at x=%.4f, y=%.4f\n", input$click$x, input$click$y))
-            #<><><> if (input$view == "T profile") {
-            #<><><>     d2 <- (input$click$x-state$data$temperature)^2 + (input$click$y-state$data$pressure)^2
-            #<><><>     state$level <- which.min(d2)
-            #<><><>     #sprintf("T=%.3f degC, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #<><><> } else if (input$view == "S profile") {
-            #<><><>     d2 <- (input$click$x-state$data$salinity)^2 + (input$click$y-state$data$pressure)^2
-            #<><><>     state$level <- which.min(d2)
-            #<><><>     #sprintf("S=%.3f, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #<><><> } else if (input$view == "N(z)") {
-            #<><><>     # FIXME: code for N2
-            #<><><>     d2 <- (input$click$x-state$data$N2)^2 + (input$click$y-state$data$pressure)^2
-            #<><><>     state$level <- which.min(d2)
-            #<><><>     #sprintf("N=%.3g, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #<><><> } else {
-            #<><><>     message("this view, ", input$view, "is not handled")
-            #<><><> }
+            #dmsg("state$level =", state$level, "\n")
         })
 
     observeEvent(input$keypressTrigger,
         {
             key <- intToUtf8(input$keypress)
-            dmsg(key, "\n")
+            #dmsg(key, "\n")
             if (key %in% as.character(0:9)) {
-                if (is.null(state$level )) {
+                if (is.null(state$level)) {
                     showNotification("No focus points")
                 } else {
+                    dmsg("responding to '", key, "' click for tagging\n")
                     if (state$visible[state$level]) {
-                        dmsg("  visible. should tag at level ", state$level, "\n")
-                        dmsg("  analystName=\"", state$analystName, "\"\n")
-                        dmsg("  file=\"", state$file, "\"\n")
+                        #dmsg("  visible. should tag at level ", state$level, "\n")
+                        #dmsg("  analystName=\"", state$analystName, "\"\n")
+                        #dmsg("  file=\"", state$file, "\"\n")
                         saveTag(file=state$file, level=state$level, tag=as.integer(key),
                             analyst=state$analyst, dbname=getDatabaseName())
+                        state$step <<- state$step + 1 # other shiny elements notice this
                     } else {
                         showNotification("No focus points in current view")
                     }
                 }
             } else if (key == "i") {
                 if (!is.null(input$hover$x)) {
+                    dmsg("responding to 'i' click for zooming in\n")
                     nearestLevel <- findNearestLevel(input$hover$x, input$hover$y, state$usr, state$data, input$view)
                     span <- sum(state$visible)
                     if (span > default$focus$minimumSpan) {
@@ -280,28 +299,33 @@ server <- function(input, output, session) {
                     }
                 }
             } else if (key == "o") {
+                dmsg("responding to 'o' click for zooming out\n")
                 limits <- visibleToLimits(state$visible)
                 span <- diff(limits)
                 limits <- limitsTrim(limits + c(-span, span), state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
-                #} else if (key == "O") {
-                #    state$visible <- rep(TRUE, state$ndata)
-            } else if (key == "j") { # move down in water column
+            } else if (key == "j") {
+                dmsg("responding to 'j' click for moving down in water column\n")
                 if (!tail(state$visible, 1)) {
                     limits <- visibleToLimits(state$visible)
                     span <- diff(limits)
                     limits <- limitsTrim(limits + (2/3)*span, state$ndata)
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
-            } else if (key == "k") { # move up in water column
+            } else if (key == "k") {
+                dmsg("responding to 'k' click for moving up in water column\n")
                 if (!head(state$visible, 1)) {
                     limits <- visibleToLimits(state$visible)
                     span <- diff(limits)
                     limits <- limitsTrim(limits - (2/3)*span, state$ndata)
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
-            } else if (key == "u") {
-                state$level <- NULL
+            } else if (key == "x") {
+                dmsg("responding to 'x' click to remove focus\n")
+                if (focusIsTagged()) {
+                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName())
+                    state$step <<- state$step + 1 # other shiny elements notice this
+                }
             }
         })
 
@@ -337,12 +361,17 @@ server <- function(input, output, session) {
 
     output$tagMsg <- renderText(
         {
-            tags <- getTags()
-            if (length(tags$tag) > 0L) {
-                paste(length(tags$tag), "tags")
+            state$step # to cause shiny to update this
+            file <- state$file
+            tags <- getTags(state$file)
+            tags <- tags[tags$file == file, ]
+            tagMsg <- if (length(tags$tag) > 0L) {
+                pluralize(length(tags$tag), "tag")
             } else {
                 "no tags yet"
             }
+            focusMsg <- if (focusIsTagged()) " (focus is tagged)" else ""
+            paste0(file, ": ", tagMsg, focusMsg)
         })
 
     output$plotPanel <- renderUI({
@@ -353,61 +382,49 @@ server <- function(input, output, session) {
     })
 
     output$plot <- renderPlot({
+        state$step # cause a shiny update
+        input$yProfile # cause a shiny update
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$temperature[state$visible]
-            if (input$yProfile == "pressure") {
-                y <- state$data$pressure[state$visible]
-                ylab <- resizableLabel("p")
-            } else if (input$yProfile == "sigmaTheta") {
-                y <- state$data$sigmaTheta[state$visible]
-                ylab <- expression(sigma[theta] * " [" * kg/m^3*"]")
-            }
-            #msg("1...T ylab:");print(file=stderr(), ylab)
+            y <- data$yProfile[state$visible]
             plot(x, y, ylim=rev(range(y)),
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
-                    points(state$data$temperature[state$level],
-                        if (input$yProfile == "pressure") state$data$pressure[state$level]
-                        else state$data$sigmaTheta[state$level],
+                    points(state$data$temperature[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
+            }
+            tags <- getTags(state$file)
+            if (length(tags$tag) > 0) {
+                with(default$tag,
+                    points(state$data$temperature[tags$level], state$data$yProfile[tags$level],
+                        cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
             }
             axis(side=2)
             axis(side=3)
-            #msg("2...T ylab:");print(file=stderr(), ylab)
-            mtext(ylab, side=2, line=1.9)
-            mtext(resizableLabel("T"), side=3, line=1.9)
+            mtext(data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("T"), side=3, line=1.5)
             box()
         } else if (input$view == "S profile") {
-            par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
+            par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$salinity[state$visible]
-            if (input$yProfile == "pressure") {
-                y <- state$data$pressure[state$visible]
-                ylab <- resizableLabel("p")
-            } else if (input$yProfile == "sigmaTheta") {
-                y <- state$data$sigmaTheta[state$visible]
-                ylab <- expression(sigma[theta] * " [" * kg/m^3*"]")
-            }
-            #msg("1...S ylab:");print(file=stderr(), ylab)
+            y <- state$data$yProfile[state$visible]
             plot(x, y, ylim=rev(range(y)),
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
-                    points(state$data$salinity[state$level],
-                        if (input$yProfile == "pressure") state$data$pressure[state$level]
-                        else state$data$sigmaTheta[state$level],
+                    points(state$data$salinity[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             axis(side=2)
             axis(side=3)
-            #msg("2...S ylab:");print(file=stderr(), ylab)
-            mtext(ylab, side=2, line=1.9)
-            mtext(resizableLabel("S"), side=3, line=1.9)
+            mtext(data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("S"), side=3, line=1.5)
             box()
         } else if (input$view == "TS") {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
@@ -425,7 +442,7 @@ server <- function(input, output, session) {
             plot(0:1, 0:1, xlab="", ylab="", axes=FALSE, type="n")
             text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
         }
-    })
+    }, pointsize=16)
 }
 
 shinyApp(ui, server)
