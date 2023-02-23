@@ -21,13 +21,14 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <ul>
 <li> <b>i</b> zoom in near mouse</li>
 <li> <b>o</b> zoom out</li>
-<li> <b>0</b> return to full scale</li>
+<!-- <li> <b>O</b> (upper-case <b>o</b>) zoom all the way out</li> -->
 <li> <b>j</b> move down in water column</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
 <li><i>Tagging</i></li>
 <ul>
-<li> <b>u</b> remove focus</li>
+<li> <b>0</b> through <b>9</b> tag the focus point with given numeric code</li>
+<li> <b>u</b> remove tag on focus point</li>
 </ul>
 </ul>
 "
@@ -77,20 +78,28 @@ getTags <- function(dbname=getDatabaseName())
     tags
 }
 
-findNearestIndex <- function(hover, data, view)
+findNearestIndex <- function(x, y, usr, data, view)
 {
+    dmsg("findNearestIndex(", x, ",", y, "...)\n")
+    dmsg("  ", vectorShow(usr))
+    dx2 <- diff(usr[1:2])^2
+    dy2 <- diff(usr[3:4])^2
+    dmsg("  ", vectorShow(dx2))
+    dmsg("  ", vectorShow(dy2))
     if (view == "T profile") {
-        d2 <- (hover$x - data$temperature)^2 + (hover$y - data$pressure)^2
+        d2 <- (x - data$temperature)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        dmsg(sprintf("hovering at T=%.3f, p=%.3f -> index=%d\n",
-                hover$x, hover$y, nearest))
+        dmsg(sprintf("  T=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "S profile") {
-        d2 <- (hover$x - data$salinity)^2 + (hover$y - data$pressure)^2
+        d2 <- (x - data$salinity)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        dmsg(sprintf("hovering at S=%.3f, p=%.3f -> index=%d\n",
-                hover$x, hover$y, nearest))
+        dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+    } else if (view == "TS") {
+        d2 <- (x - data$salinity)^2/dx2 + (y - data$temperature)^2/dy2
+        nearest <- which.min(d2)
+        dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else {
-        stop("FIXME: key=i, plot type not S or T")
+        stop("view=\"", view, "\" is not handled yet")
     }
     nearest
 }
@@ -159,8 +168,8 @@ ui <- fluidPage(
             column(2, selectInput("view", label=NULL,
                     choices=c("S profile"="S profile", "T profile"="T profile", "TS"="TS"),
                     selected="T profile")),
-            column(2, selectInput("yaxis", label=NULL,
-                    choices=c("pressure"="pressure", "sigma-theta"="sigthe"),
+            column(2, selectInput("yProfile", label=NULL,
+                    choices=c("pressure"="pressure", "sigma-theta"="sigmaTheta"),
                     selected="pressure")),
             column(3, selectInput("plotType", label=NULL,
                     choices=c("line"="l", "points"="p", "line+points"="o"),
@@ -192,12 +201,15 @@ server <- function(input, output, session) {
     ctd <- read.oce(file)
     dbname <<- "ctd.db"
     data <- with(ctd@data, list(pressure=pressure, salinity=salinity, temperature=temperature))
-    data$sigthe <- swSigmaTheta(ctd, eos="unesco")
+    data$yProfile <- data$pressure
+    data$ylabProfile <- resizableLabel("p")
+    data$sigmaTheta <- swSigmaTheta(ctd, eos="unesco")
     state <- reactiveValues(
         ctd=ctd,
         data=data,
         ndata=length(data$pressure),
         nearestIndex=NULL,
+        usr=c(0, 1, 0, 1),
         visible=rep(TRUE, length(data$pressure)) # all points visible at the start
         )
 
@@ -214,31 +226,44 @@ server <- function(input, output, session) {
 
     observeEvent(input$click,
         {
+            state$nearestIndex <- findNearestIndex(input$click$x, input$click$y, state$usr, state$data, input$view)
+            message("state$nearestIndex=", state$nearestIndex)
             #dmsg(sprintf("clicked at x=%.4f, y=%.4f\n", input$click$x, input$click$y))
-            if (input$view == "T profile") {
-                d2 <- (input$click$x-state$data$temperature)^2 + (input$click$y-state$data$pressure)^2
-                state$nearestIndex <- which.min(d2)
-                #sprintf("T=%.3f degC, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            } else if (input$view == "S profile") {
-                d2 <- (input$click$x-state$data$salinity)^2 + (input$click$y-state$data$pressure)^2
-                state$nearestIndex <- which.min(d2)
-                #sprintf("S=%.3f, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            } else if (input$view == "N(z)") {
-                # FIXME: code for N2
-                d2 <- (input$click$x-state$data$N2)^2 + (input$click$y-state$data$pressure)^2
-                state$nearestIndex <- which.min(d2)
-                #sprintf("N=%.3g, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            } else {
-                message("this view, ", input$view, "is not handled")
-            }
+            #<><><> if (input$view == "T profile") {
+            #<><><>     d2 <- (input$click$x-state$data$temperature)^2 + (input$click$y-state$data$pressure)^2
+            #<><><>     state$nearestIndex <- which.min(d2)
+            #<><><>     #sprintf("T=%.3f degC, p=%.3f dbar\n", input$hover$x, input$hover$y)
+            #<><><> } else if (input$view == "S profile") {
+            #<><><>     d2 <- (input$click$x-state$data$salinity)^2 + (input$click$y-state$data$pressure)^2
+            #<><><>     state$nearestIndex <- which.min(d2)
+            #<><><>     #sprintf("S=%.3f, p=%.3f dbar\n", input$hover$x, input$hover$y)
+            #<><><> } else if (input$view == "N(z)") {
+            #<><><>     # FIXME: code for N2
+            #<><><>     d2 <- (input$click$x-state$data$N2)^2 + (input$click$y-state$data$pressure)^2
+            #<><><>     state$nearestIndex <- which.min(d2)
+            #<><><>     #sprintf("N=%.3g, p=%.3f dbar\n", input$hover$x, input$hover$y)
+            #<><><> } else {
+            #<><><>     message("this view, ", input$view, "is not handled")
+            #<><><> }
         })
 
     observeEvent(input$keypressTrigger,
         {
             key <- intToUtf8(input$keypress)
-            if (key == "i") {
+            dmsg(key, "\n")
+            if (key %in% as.character(0:9)) {
+                if (is.null(state$nearestIndex)) {
+                    showNotification("No focus points")
+                } else {
+                    if (state$visible[state$nearestIndex]) {
+                        dmsg("  visible. should tag at level ", state$nearestIndex, "\n")
+                    } else {
+                        showNotification("No focus points in current view")
+                    }
+                }
+            } else if (key == "i") {
                 if (!is.null(input$hover$x)) {
-                    nearestIndex <- findNearestIndex(input$hover, state$data, input$view)
+                    nearestIndex <- findNearestIndex(input$hover$x, input$hover$y, state$usr, state$data, input$view)
                     span <- sum(state$visible)
                     if (span > default$focus$minimumSpan) {
                         span <- span / 4
@@ -247,21 +272,12 @@ server <- function(input, output, session) {
                     }
                 }
             } else if (key == "o") {
-                #dmsg("'o'")
-                #dprint(state$visible)
                 limits <- visibleToLimits(state$visible)
-                #dmsg(vectorShow(limits, postscript="original"))
                 span <- diff(limits)
                 limits <- limitsTrim(limits + c(-span, span), state$ndata)
-                #dmsg(vectorShow(limits, postscript="updated"))
                 state$visible <- limitsToVisible(limits, state$ndata)
-                #?span <- sum(state$visible)
-                #?span <- span * 4
-                #?limits <- as.integer(state$nearestIndex + c(-span/2, span/2))
-                #?limits[1] <- max(1L, limits[1])
-                #?limits[2] <- min(state$ndata, limits[2])
-                #state$visible <- rep(FALSE, state$ndata)
-                #state$visible[seq(limits[1], limits[2])] <- TRUE
+                #} else if (key == "O") {
+                #    state$visible <- rep(TRUE, state$ndata)
             } else if (key == "j") { # move down in water column
                 if (!tail(state$visible, 1)) {
                     limits <- visibleToLimits(state$visible)
@@ -276,12 +292,21 @@ server <- function(input, output, session) {
                     limits <- limitsTrim(limits - (2/3)*span, state$ndata)
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
-            } else if (key == "0") {
-                state$visible <- rep(TRUE, state$ndata)
             } else if (key == "u") {
                 state$nearestIndex <- NULL
             }
         })
+
+    observeEvent(input$yProfile, {
+        dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
+        if (input$yProfile == "pressure") {
+            data$yProfile <<- data$pressure
+            data$ylabProfile <<- resizableLabel("p")
+        } else {
+            data$yProfile <<- data$sigmaTheta
+            data$ylabProfile <<- expression(sigma[theta]* " ["* kg/m^3*"]")
+        }
+    })
 
     output$levelMsg <- renderText(
         {
@@ -323,21 +348,22 @@ server <- function(input, output, session) {
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$temperature[state$visible]
-            if (input$yaxis == "pressure") {
+            if (input$yProfile == "pressure") {
                 y <- state$data$pressure[state$visible]
                 ylab <- resizableLabel("p")
-            } else if (input$yaxis == "sigthe") {
-                y <- state$data$sigthe[state$visible]
+            } else if (input$yProfile == "sigmaTheta") {
+                y <- state$data$sigmaTheta[state$visible]
                 ylab <- expression(sigma[theta] * " [" * kg/m^3*"]")
             }
             #msg("1...T ylab:");print(file=stderr(), ylab)
             plot(x, y, ylim=rev(range(y)),
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
+            state$usr <<- par("usr")
             if (!is.null(state$nearestIndex)) {
                 with(default$focus,
                     points(state$data$temperature[state$nearestIndex],
-                        if (input$yaxis == "pressure") state$data$pressure[state$nearestIndex] else state$data$sigthe[state$nearestIndex],
+                        if (input$yProfile == "pressure") state$data$pressure[state$nearestIndex] else state$data$sigmaTheta[state$nearestIndex],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             axis(side=2)
@@ -349,21 +375,22 @@ server <- function(input, output, session) {
         } else if (input$view == "S profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$salinity[state$visible]
-            if (input$yaxis == "pressure") {
+            if (input$yProfile == "pressure") {
                 y <- state$data$pressure[state$visible]
                 ylab <- resizableLabel("p")
-            } else if (input$yaxis == "sigthe") {
-                y <- state$data$sigthe[state$visible]
+            } else if (input$yProfile == "sigmaTheta") {
+                y <- state$data$sigmaTheta[state$visible]
                 ylab <- expression(sigma[theta] * " [" * kg/m^3*"]")
             }
             #msg("1...S ylab:");print(file=stderr(), ylab)
             plot(x, y, ylim=rev(range(y)),
                 type=input$plotType, cex=default$data$cex, col=default$data$col,
                 axes=FALSE, xlab="", ylab="")
+            state$usr <<- par("usr")
             if (!is.null(state$nearestIndex)) {
                 with(default$focus,
                     points(state$data$salinity[state$nearestIndex],
-                        if (input$yaxis == "pressure") state$data$pressure[state$nearestIndex] else state$data$sigthe[state$nearestIndex],
+                        if (input$yProfile == "pressure") state$data$pressure[state$nearestIndex] else state$data$sigmaTheta[state$nearestIndex],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             axis(side=2)
@@ -378,6 +405,7 @@ server <- function(input, output, session) {
             y <- state$data$temperature[state$visible]
             p <- state$data$pressure[state$visible]
             plotTS(as.ctd(x, y, p), eos="unesco", type=input$plotType)
+            state$usr <<- par("usr")
             if (!is.null(state$nearestIndex)) {
                 with(default$focus,
                     points(state$data$salinity[state$nearestIndex], state$data$temperature[state$nearestIndex],
