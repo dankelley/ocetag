@@ -63,12 +63,11 @@ createDatabase <- function(dbname=getDatabaseName())
     if (!file.exists(dbname)) {
         dmsg("creating '", dbname, "'\n")
         con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
+        RSQLite::dbCreateTable(con, "version",
+            c("version"="INTEGER"))
+        RSQLite::dbWriteTable(con, "version", data.frame(version=1L), overwrite=TRUE)
         RSQLite::dbCreateTable(con, "tags",
-            c("file"="TEXT",
-                level="INT",
-                tag="INT",
-                analyst="TEXT",
-                analysisTime="TIMESTAMP"))
+            c("file"="TEXT", level="INT", tag="INT", analyst="TEXT", analysisTime="TIMESTAMP"))
         RSQLite::dbDisconnect(con)
     }
 }
