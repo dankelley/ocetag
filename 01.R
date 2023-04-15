@@ -30,7 +30,8 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 </ul>
 <li><i>Tagging</i></li>
 <ul>
-<li> <b>0</b> through <b>9</b> tag the focus point with given numeric code</li>
+<li> <b>0</b> through <b>9</b> tag the focus point with given numeric code.
+EG: 1=top of DD layer, 2=bottom of DD layer, 3=warm-salty peak, 4=cool-fresh peak.</li>
 <li> <b>x</b> remove tag on focus point</li>
 <li> <b>u</b> remove focus point</li>
 </ul>
