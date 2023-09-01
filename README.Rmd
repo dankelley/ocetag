@@ -1,27 +1,17 @@
 ---
-title: title
-date: "`r Sys.Date()`"
-output: pdf_document
+title: the ctd_tag app
+author: Dan Kelley
 ---
-A data file
-```
-cp ~/data/arctic/beaufort/2012/d201211_0048.cnv .
-```
-```{r}
-D <- function(x, y)
-{
-    dydx <- diff(y) / diff(x)
-    c(dydx, tail(dydx, 1))
-}
-library(oce)
-d <- read.oce("d201211_0048.cnv")
-ds <- subset(d, 250 < pressure & pressure <= 350)
-plotProfile(ds, xtype="temperature")
-plotProfile(ds, xtype=D(ds[["pressure"]], ds[["temperature"]]), xlab="dT/dp")
-plotProfile(ds, xtype="salinity")
-plotProfile(ds, xtype=D(ds[["pressure"]], ds[["salinity"]]), xlab="dS/dp")
-plotProfile(ds, xtype="density")
-plotProfile(ds, xtype=D(ds[["pressure"]], ds[["density"]]), xlab="d(rho)/dp")
-plotProfile(ds, xtype="Rrho")
-plotTS(ds)
-```
+
+# Development Ideas
+
+1. [ ] Make a function that calls the app.  The function should have args such as
+   a. [ ] directory holding files
+   b. [ ] file suffix (.odf or .cnv by default)
+   c. [ ] something about default scheme (for flags)
+   d. [ ] name of database file
+   e. [ ] etc
+2. [ ] Have an interface to turn on suggested QC actions, e.g.
+   a. [ ] highlight density inversions
+   b. [ ] trim-to-descent
+3. [ ] Have an interface to accept/reject suggested actions (and maybe record this in the database).
