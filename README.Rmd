@@ -3,9 +3,9 @@ title: the ctd_tag app
 author: Dan Kelley
 ---
 
-# Development Ideas
+# First-order development ideas
 
-1. [ ] Make a function that calls the app.  The function should have args such as
+1. [ ] Make a function to call the app, with parameters such as
    a. [ ] directory holding files
    b. [ ] file suffix (.odf or .cnv by default)
    c. [ ] something about default scheme (for flags)
@@ -14,4 +14,12 @@ author: Dan Kelley
 2. [ ] Have an interface to turn on suggested QC actions, e.g.
    a. [ ] highlight density inversions
    b. [ ] trim-to-descent
-3. [ ] Have an interface to accept/reject suggested actions (and maybe record this in the database).
+3. [ ] Have an interface to accept/reject suggested actions (and maybe record
+   this in the database).
+
+# Second-order development ideas
+
+1. Develop a tool for exporting oce objects to relevant output formats.  This
+   will need to be undertaken by someone with R expertise, SQL expertise, and of
+   course expertise in writing the output format in question.
+
