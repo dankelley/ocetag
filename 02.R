@@ -1,14 +1,25 @@
 # vim:textwidth=80:expandtab:shiftwidth=4:softtabstop=4
 eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
-library(oce)
-options(oceEOS=eos)
-source("database.R")
-debug <- 1
-
 library(shiny)
+library(DT)
 library(shinyBS)
 library(shinycssloaders)
+library(oce)
+options(oceEOS=eos)
+
+msg <- function(...)
+    cat(file=stderr(), ..., sep="")
+
+dmsg <- function(...)
+    if (debug > 0) cat(file=stderr(), ..., sep="")
+
+dprint <- function(...)
+    if (debug > 0) print(file=stderr(), ...)
+
+source("database.R") # database functions
+
+debug <- 1
 
 helpMouse <- "<p><i>Mouse</i></p>
 <ul>
@@ -17,20 +28,23 @@ helpMouse <- "<p><i>Mouse</i></p>
 
 helpKeyboard <- "<p><i>Keyboard</i></p>
 <ul>
+<li> <i>Application Control</i></p></li>
+<ul>
+<li> <b>?</b> show this message</li>
+</ul>
 <li> <i>Zoom and pan</i></p></li>
 <ul>
-<li> <b>i</b> zoom in near mouse</li>
-<li> <b>o</b> zoom out</li>
+<li> <b>i</b> zoom in (narrow the 'level' range) near the mouse</li>
+<li> <b>o</b> zoom out (widen the 'level' range)</li>
 <li> <b>O</b> (upper-case 'o') zoom all the way out</li>
 <li> <b>j</b> move down in water column</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
 <li><i>Tagging</i></li>
 <ul>
-<li> <b>0</b> through <b>9</b> tag the focus point with given numeric code.
-EG: 1=top of DD layer, 2=bottom of DD layer, 3=warm-salty peak, 4=cool-fresh peak.</li>
-<li> <b>x</b> remove tag on focus point</li>
-<li> <b>u</b> remove focus point</li>
+<li> <b>0</b> through <b>9</b> tag the focus point with given numeric code</li>
+<li> <b>u</b> remove focus on last-clicked point</li>
+<li> <b>x</b> delete the tag on the focus point (if there is one)</li>
 </ul>
 </ul>
 "
@@ -45,14 +59,6 @@ pluralize <- function(n=1, singular="item", plural=NULL)
     if (n == 1L) singular else plural
 }
 
-msg <- function(...)
-    cat(file=stderr(), ..., sep="")
-
-dmsg <- function(...)
-    if (debug > 0) cat(file=stderr(), ..., sep="")
-
-dprint <- function(...)
-    if (debug > 0) print(file=stderr(), ...)
 
 findNearestLevel <- function(x, y, usr, data, view)
 {
@@ -148,27 +154,42 @@ ui <- fluidPage(
                     selected="pressure")),
             column(2, selectInput("plotType", label=NULL,
                     choices=c("line"="l", "points"="p", "line+points"="o"),
-                selected="o")))),
+                    selected="o")))),
     wellPanel(
         fluidRow(
-            column(12, uiOutput("levelMsg"))),
-            column(12, uiOutput("tagMsg"))),
-    fluidRow(
-        uiOutput("plotPanel")))
-
-
+            column(12, uiOutput("levelMsg")),
+            column(12, uiOutput("tagMsg")))),
+    wellPanel(
+        fluidRow(
+            uiOutput("plotPanel"))),
+    br(),
+    br(),
+    p("Tag Table"),
+    br(),
+    wellPanel(
+        fluidRow(
+            column(12, uiOutput("databasePanel")))))
 
 server <- function(input, output, session) {
-    createDatabase()
+    createDatabase(debug=debug)
     file <- normalizePath(shiny::getShinyOption("file"))
     ctd <- oce::read.oce(file)
-    data <- list(pressure=ctd@data$pressure, salinity=ctd@data$salinity, temperature=ctd@data$temperature)
+    data <- list(
+        longitude=ctd[["longitude"]][1],
+        latitude=ctd[["latitude"]][1],
+        pressure=ctd[["pressure"]],
+        salinity=ctd[["salinity"]],
+        temperature=ctd[["temperature"]],
+        CT=ctd[["CT"]],
+        SA=ctd[["SA"]],
+        sigma0=ctd[["sigma0"]],
+        spiciness0=ctd[["spiciness0"]])
+    # The next two get altered by user actions
     data$yProfile <- data$pressure
     data$ylabProfile <- resizableLabel("p")
-    data$CT <- ctd[["CT"]]
-    data$SA <- ctd[["SA"]]
-    data$sigma0 <- ctd[["sigma0"]]
-    data$spiciness0 <- ctd[["spiciness0"]]
+    # 'state', being reactive, creates a gateway between R and the webserver
+    # that displays the app. Note that 'step' is used when one R element needs
+    # to tell other elements that a change has happened.
     state <- reactiveValues(
         step=0L,
         file=file,
@@ -182,12 +203,12 @@ server <- function(input, output, session) {
     )
 
     focusIsTagged <- function() {
-        !is.null(state$level) && (state$level %in% getTags(state$file)$level)
+        !is.null(state$level) && (state$level %in% getTags(state$file, debug=debug)$level)
     }
 
     focusTags <- function() {
         if (!is.null(state$level) && !is.null(state$file)) {
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             tags[tags$level==state$level, "tag"]
         }
     }
@@ -220,7 +241,7 @@ server <- function(input, output, session) {
                     dmsg("responding to '", key, "' click for tagging\n")
                     if (state$visible[state$level]) {
                         saveTag(file=state$file, level=state$level, tag=as.integer(key),
-                            analyst=state$analyst, dbname=getDatabaseName())
+                            analyst=state$analyst, dbname=getDatabaseName(), debug=debug)
                         state$step <<- state$step + 1 # other shiny elements notice this
                     } else {
                         showNotification("No focus points in current view")
@@ -266,17 +287,21 @@ server <- function(input, output, session) {
             } else if (key == "x") {
                 dmsg("responding to 'x' to remove tag if focussed\n")
                 if (focusIsTagged()) {
-                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName())
+                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName(), debug=debug)
                     state$step <<- state$step + 1 # other shiny elements notice this
                 }
             } else if (key == "u") {
-                dmsg("responding to 'u' to remove tag if focussed\n")
+                dmsg("responding to 'u' to remove focus point (i.e. crossed point)\n")
                 state$level <<- NULL
+                state$step <<- state$step + 1 # other shiny elements notice this
+            } else if (key == "?") {
+                shiny::showModal(shiny::modalDialog(title=NULL,
+                        size="xl", shiny::HTML(overallHelp), easyClose=TRUE))
             }
         })
 
     observeEvent(input$yProfile, {
-        dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
+        #dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
         if (input$yProfile == "pressure") {
             state$data$yProfile <<- data$pressure
             state$data$ylabProfile <<- resizableLabel("p")
@@ -289,15 +314,14 @@ server <- function(input, output, session) {
     output$levelMsg <- renderText(
         {
             pvisible <- data$pressure[state$visible]
-            # FIXME: indent stupidly here, because the tagMsg is indented (why??)
-            sprintf("&nbsp;&nbsp;&nbsp;&nbsp;CTD file \"%s\" [%.1f to %.1f dbar shown]", state$file, min(pvisible), max(pvisible))
+            sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]", state$file, min(pvisible), max(pvisible))
         })
 
     output$tagMsg <- renderText(
         {
             state$step # to cause shiny to update this
             file <- state$file
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             tags <- tags[tags$file == file, ]
             tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
             focusMsg <- if (focusIsTagged()) {
@@ -324,16 +348,16 @@ server <- function(input, output, session) {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$CT[state$visible]
             y <- state$data$yProfile[state$visible]
-            plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
-                cex=default$Tprofile$cex, col=default$Tprofile$col, lwd=default$Tprofile$lwd, pch=default$Tprofile$pch,
-                axes=FALSE, xlab="", ylab="")
+            with(default$Tprofile,
+                plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
+                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
                     points(state$data$CT[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$CT[tags$level], state$data$yProfile[tags$level],
@@ -349,17 +373,16 @@ server <- function(input, output, session) {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$SA[state$visible]
             y <- state$data$yProfile[state$visible]
-            plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
-                cex=default$Sprofile$cex, col=default$Sprofile$col, lwd=default$Sprofile$lwd, pch=default$Sprofile$pch,
-                axes=FALSE, xlab="", ylab="")
+            with(default$Sprofile,
+                plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
+                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
-                dmsg("S profile... ", vectorShow(state$level))
                 with(default$focus,
                     points(state$data$SA[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$yProfile[tags$level],
@@ -376,8 +399,8 @@ server <- function(input, output, session) {
             x <- state$data$sigma0[state$visible]
             y <- state$data$yProfile[state$visible]
             with(default$sigmaprofile,
-                plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
-                    cex=cex, col=col, lwd=lwd, pch=pch, axes=FALSE, xlab="", ylab=""))
+                plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
+                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 dmsg("sigma profile... ", vectorShow(state$level))
@@ -385,7 +408,7 @@ server <- function(input, output, session) {
                     points(state$data$sigma0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$sigma0[tags$level], state$data$yProfile[tags$level],
@@ -402,8 +425,8 @@ server <- function(input, output, session) {
             x <- state$data$spiciness0[state$visible]
             y <- state$data$yProfile[state$visible]
             with(default$spicinessprofile,
-                plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
-                    cex=cex, col=col, lwd=lwd, pch=pch, axes=FALSE, xlab="", ylab=""))
+                plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
+                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 dmsg("spiciness profile... ", vectorShow(state$level))
@@ -411,7 +434,7 @@ server <- function(input, output, session) {
                     points(state$data$spiciness0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$spiciness0[tags$level], state$data$yProfile[tags$level],
@@ -428,21 +451,22 @@ server <- function(input, output, session) {
             x <- state$data$SA[state$visible]
             y <- state$data$CT[state$visible]
             p <- state$data$pressure[state$visible]
-            ctd <- as.ctd(x, y, p)
+            ctd <- as.ctd(x, y, p, longitude=data$longitude[1], latitude=data$latitude[1])
             # Plot empty with visible data, but then add the actual full data.
             # That way, we can see tagged points even if they are in the 4%
             # within-plot buffer zone.  (I am not using xaxs="i" etc because
             # it can put intrusions on the axis.)
             plotTS(ctd, eos=eos, type="n")
-            points(state$data$SA, state$data$CT, type=input$plotType,
-                cex=default$TS$cex, col=default$TS$col, lwd=default$TS$lwd, pch=default$TS$pch)
+            with(default$TS,
+                points(state$data$SA, state$data$CT, type=input$plotType,
+                    cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
                     points(state$data$SA[state$level], state$data$CT[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file)
+            tags <- getTags(state$file, debug=debug)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$CT[tags$level],
@@ -452,7 +476,16 @@ server <- function(input, output, session) {
             plot(0:1, 0:1, xlab="", ylab="", axes=FALSE, type="n")
             text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
         }
-    }, height=500, pointsize=16)
+    }, height=500, pointsize=14)
+
+    output$databasePanel <- renderUI({
+        state$step # to cause shiny to update this
+        tags <- getTags(state$file, debug=debug)
+        o <- order(tags$level)
+        tags <- tags[o, ]
+        tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
+        DT::renderDT(tags)
+    })
 }
 
 shiny::shinyOptions(file="d201211_0048.cnv")
