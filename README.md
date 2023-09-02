@@ -1,13 +1,13 @@
 # Files
 
-# 01.R
+## 01.R
 
 A basic app, essentially a test of whether this GUI is acceptable.
 Brushing is not permitted here, either for selection or zooming.
 Keystrokes are used for both actions, and also for navigation up and
 down in the water column.
 
-# 02.R
+## 02.R
 
 As 01.R but
 
@@ -17,8 +17,10 @@ As 01.R but
 4.  add spiciness0 profile
 5.  show tags at focus point (if any) in status box
 6.  indicate database name in status box
+7.  show database entries
+8.  use full pathnames in CTD and database files
 
-# First-order development ideas
+# Development ideas
 
 1.  ☐ Make a function to call the app, with parameters such as
     1.  ☐ directory holding files
@@ -32,7 +34,7 @@ As 01.R but
 3.  ☐ Have an interface to accept/reject suggested actions (and maybe
     record this in the database).
 
-# Second-order development ideas
+# Related development ideas
 
 1.  Develop a tool for exporting oce objects to relevant output formats.
     This will need to be undertaken by someone with R expertise, SQL
