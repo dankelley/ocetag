@@ -1,3 +1,23 @@
+# Files
+
+# 01.R
+
+A basic app, essentially a test of whether this GUI is acceptable.
+Brushing is not permitted here, either for selection or zooming.
+Keystrokes are used for both actions, and also for navigation up and
+down in the water column.
+
+# 02.R
+
+As 01.R but
+
+1.  use SA, not S
+2.  use CT, not theta
+3.  add sigma0 profile
+4.  add spiciness0 profile
+5.  show tags at focus point (if any) in status box
+6.  indicate database name in status box
+
 # First-order development ideas
 
 1.  ☐ Make a function to call the app, with parameters such as

@@ -1,13 +1,11 @@
 # vim:textwidth=80:expandtab:shiftwidth=4:softtabstop=4
+eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
 library(oce)
-#source("~/git/oce/R/ctd.R")
-#source("~/git/oce/R/sw.R")
-options(oceEOS="unesco") # avoid the hassle of supporting two EOSs
+options(oceEOS=eos)
 debug <- 1
 
 library(shiny)
-library(shinyFiles)
 library(shinyBS)
 library(shinycssloaders)
 library(DBI)
@@ -130,15 +128,23 @@ findNearestLevel <- function(x, y, usr, data, view)
     #dmsg("  ", vectorShow(dx2))
     #dmsg("  ", vectorShow(dy2))
     if (view == "T profile") {
-        d2 <- (x - data$temperature)^2/dx2 + (y - data$yProfile)^2/dy2
+        d2 <- (x - data$CT)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
         #dmsg(sprintf("  T=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "S profile") {
-        d2 <- (x - data$salinity)^2/dx2 + (y - data$yProfile)^2/dy2
+        d2 <- (x - data$SA)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
         #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
-    } else if (view == "TS") {
-        d2 <- (x - data$salinity)^2/dx2 + (y - data$theta)^2/dy2
+    } else if (view == "sigma profile") {
+        d2 <- (x - data$sigma0)^2/dx2 + (y - data$yProfile)^2/dy2
+        nearest <- which.min(d2)
+        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+     } else if (view == "spiciness profile") {
+        d2 <- (x - data$spiciness0)^2/dx2 + (y - data$yProfile)^2/dy2
+        nearest <- which.min(d2)
+        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
+     } else if (view == "TS") {
+        d2 <- (x - data$SA)^2/dx2 + (y - data$CT)^2/dy2
         nearest <- which.min(d2)
         #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else {
@@ -179,6 +185,8 @@ default <- list(
     data=list(cex=0.6, col="#333333A0", lwd=1, pch=1, type="o"),
     Tprofile=list(cex=0.7, col="#333333A0", lwd=1, pch=1),
     Sprofile=list(cex=0.7, col="#333333A0", lwd=1, pch=1),
+    sigmaprofile=list(cex=0.7, col="#333333A0", lwd=1, pch=1),
+    spicinessprofile=list(cex=0.7, col="#333333A0", lwd=1, pch=1),
     TS=list(cex=0.7, col=1, lwd=1, pch=1),
     highlight=list(cex=3, col="purple", lwd=4, pch=5),
     join=list(cex=1.4, col=rgb(0.8, 0, 0.8, alpha=0.5), pch=0, lwd=4.0, lwdSymbol=4.0, type="o"),
@@ -197,20 +205,27 @@ ui <- fluidPage(
         fluidRow(
             column(1, actionButton("help", "Help")),
             column(1, actionButton("quit", "Quit")),
-            column(2, selectInput("view", label=NULL,
-                    choices=c("S profile"="S profile", "T profile"="T profile", "TS"="TS"),
+            column(3, selectInput("view", label=NULL,
+                    choices=c(
+                        "S profile"="S profile",
+                        "T profile"="T profile",
+                        "spiciness profile",
+                        "sigma profile",
+                        "TS"="TS"),
                     selected="T profile")),
-            column(3, selectInput("yProfile", label=NULL,
-                    choices=c("pressure"="pressure", "sigma-theta"="sigmaTheta"),
+            # FIXME: only show next for profile types
+            column(2, selectInput("yProfile", label=NULL,
+                    choices=c(
+                        "pressure"="pressure",
+                        "sigma"="sigma"),
                     selected="pressure")),
             column(2, selectInput("plotType", label=NULL,
                     choices=c("line"="l", "points"="p", "line+points"="o"),
-                #selected="o"))),
                 selected="o")))),
     wellPanel(
         fluidRow(
-            column(12, uiOutput("tagMsg"))),
             column(12, uiOutput("levelMsg"))),
+            column(12, uiOutput("tagMsg"))),
     fluidRow(
         uiOutput("plotPanel")))
 
@@ -231,15 +246,16 @@ getDatabaseName <- function(prefix="~/ctd_tag")
 
 server <- function(input, output, session) {
     createDatabase()
-    #file <- "~/data/arctic/beaufort/2012/d201211_0048.cnv"
     file <- shiny::getShinyOption("file")
     ctd <- oce::read.oce(file)
     #dbname <<- "ctd.db"
     data <- list(pressure=ctd@data$pressure, salinity=ctd@data$salinity, temperature=ctd@data$temperature)
-    data$theta <- swTheta(ctd)
     data$yProfile <- data$pressure
     data$ylabProfile <- resizableLabel("p")
-    data$sigmaTheta <- swSigmaTheta(ctd, eos="unesco")
+    data$CT <- ctd[["CT"]]
+    data$SA <- ctd[["SA"]]
+    data$sigma0 <- ctd[["sigma0"]]
+    data$spiciness0 <- ctd[["spiciness0"]]
     state <- reactiveValues(
         step=0L,
         file=file,
@@ -250,10 +266,17 @@ server <- function(input, output, session) {
         level=NULL,
         usr=c(0, 1, 0, 1),
         visible=rep(TRUE, length(data$pressure)) # all points visible at the start
-        )
+    )
 
     focusIsTagged <- function() {
         !is.null(state$level) && (state$level %in% getTags(state$file)$level)
+    }
+
+    focusTags <- function() {
+        if (!is.null(state$level) && !is.null(state$file)) {
+            tags <- getTags(state$file)
+            tags[tags$level==state$level, "tag"]
+        }
     }
 
     observeEvent(input$help,
@@ -342,34 +365,21 @@ server <- function(input, output, session) {
         })
 
     observeEvent(input$yProfile, {
-        #dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
+        dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
         if (input$yProfile == "pressure") {
-            data$yProfile <<- data$pressure
-            data$ylabProfile <<- resizableLabel("p")
+            state$data$yProfile <<- data$pressure
+            state$data$ylabProfile <<- resizableLabel("p")
         } else {
-            data$yProfile <<- data$sigmaTheta
-            data$ylabProfile <<- expression(sigma[theta]* " ["* kg/m^3*"]")
+            state$data$yProfile <<- data$sigma0
+            state$data$ylabProfile <<- expression(sigma[0]* " ["* kg/m^3*"]")
         }
     })
 
     output$levelMsg <- renderText(
         {
-            #if (!is.null(input$hover$x)) {
-            #    if (input$view == "T profile") {
-            #        sprintf("T=%.3f degC, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #    } else if (input$view == "S profile") {
-            #        sprintf("S=%.3f, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #    } else if (input$view == "TS") {
-            #        sprintf("S=%.3g C, T=%.3f\n", input$hover$x, input$hover$y)
-            #    } else if (input$view == "N(z)") {
-            #        sprintf("N=%.3g, p=%.3f dbar\n", input$hover$x, input$hover$y)
-            #    } else {
-            #        "FIXME"
-            #    }
-            #} else {
             pvisible <- data$pressure[state$visible]
-            sprintf("%.1f to %.1f dbar shown", min(pvisible), max(pvisible))
-            #}
+            # FIXME: indent stupidly here, because the tagMsg is indented (why??)
+            sprintf("&nbsp;&nbsp;&nbsp;&nbsp;CTD file \"%s\" [%.1f to %.1f dbar shown]", state$file, min(pvisible), max(pvisible))
         })
 
     output$tagMsg <- renderText(
@@ -378,13 +388,14 @@ server <- function(input, output, session) {
             file <- state$file
             tags <- getTags(state$file)
             tags <- tags[tags$file == file, ]
-            tagMsg <- if (length(tags$tag) > 0L) {
-                pluralize(length(tags$tag), "tag")
+            tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
+            focusMsg <- if (focusIsTagged()) {
+                paste0(" (level ", state$level, " tagged: ",
+                    paste(focusTags(), collapse=" & "), ")")
             } else {
-                "no tags yet"
+                ""
             }
-            focusMsg <- if (focusIsTagged()) paste0(" (focus, at level ", state$level, ", is tagged)") else ""
-            paste0(file, ": ", tagMsg, focusMsg)
+            paste0("Database \"", getDatabaseName(), "\" ", tagMsg, " ", focusMsg)
         })
 
     output$plotPanel <- renderUI({
@@ -400,31 +411,32 @@ server <- function(input, output, session) {
         input$yProfile # cause a shiny update
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
-            x <- state$data$theta[state$visible]
-            y <- data$yProfile[state$visible]
+            x <- state$data$CT[state$visible]
+            y <- state$data$yProfile[state$visible]
             plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
                 cex=default$Tprofile$cex, col=default$Tprofile$col, lwd=default$Tprofile$lwd, pch=default$Tprofile$pch,
                 axes=FALSE, xlab="", ylab="")
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
-                    points(state$data$theta[state$level], state$data$yProfile[state$level],
+                    points(state$data$CT[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             tags <- getTags(state$file)
             if (length(tags$tag) > 0) {
                 with(default$tag,
-                    points(state$data$theta[tags$level], state$data$yProfile[tags$level],
+                    points(state$data$CT[tags$level], state$data$yProfile[tags$level],
                         cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
             }
             axis(side=2)
             axis(side=3)
-            mtext(data$ylab, side=2, line=1.5)
-            mtext(resizableLabel("theta"), side=3, line=1.5)
+            mtext(state$data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("CT"), side=3, line=1.5)
             box()
+
         } else if (input$view == "S profile") {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
-            x <- state$data$salinity[state$visible]
+            x <- state$data$SA[state$visible]
             y <- state$data$yProfile[state$visible]
             plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
                 cex=default$Sprofile$cex, col=default$Sprofile$col, lwd=default$Sprofile$lwd, pch=default$Sprofile$pch,
@@ -433,43 +445,96 @@ server <- function(input, output, session) {
             if (!is.null(state$level)) {
                 dmsg("S profile... ", vectorShow(state$level))
                 with(default$focus,
-                    points(state$data$salinity[state$level], state$data$yProfile[state$level],
+                    points(state$data$SA[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             tags <- getTags(state$file)
             if (length(tags$tag) > 0) {
                 with(default$tag,
-                    points(state$data$salinity[tags$level], state$data$yProfile[tags$level],
+                    points(state$data$SA[tags$level], state$data$yProfile[tags$level],
                         cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
             }
             axis(side=2)
             axis(side=3)
-            mtext(data$ylab, side=2, line=1.5)
-            mtext(resizableLabel("S"), side=3, line=1.5)
+            mtext(state$data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("SA"), side=3, line=1.5)
             box()
+
+        } else if (input$view == "sigma profile") {
+            par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
+            x <- state$data$sigma0[state$visible]
+            y <- state$data$yProfile[state$visible]
+            with(default$sigmaprofile,
+                plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
+                    cex=cex, col=col, lwd=lwd, pch=pch, axes=FALSE, xlab="", ylab=""))
+            state$usr <<- par("usr")
+            if (!is.null(state$level)) {
+                dmsg("sigma profile... ", vectorShow(state$level))
+                with(default$focus,
+                    points(state$data$sigma0[state$level], state$data$yProfile[state$level],
+                        cex=cex, col=col, lwd=lwd, pch=pch))
+            }
+            tags <- getTags(state$file)
+            if (length(tags$tag) > 0) {
+                with(default$tag,
+                    points(state$data$sigma0[tags$level], state$data$yProfile[tags$level],
+                        cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
+            }
+            axis(side=2)
+            axis(side=3)
+            mtext(state$data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("sigma0"), side=3, line=1.5)
+            box()
+
+        } else if (input$view == "spiciness profile") {
+            par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
+            x <- state$data$spiciness0[state$visible]
+            y <- state$data$yProfile[state$visible]
+            with(default$spicinessprofile,
+                plot(x, y, ylim=rev(range(y)), yaxs="i", type=input$plotType,
+                    cex=cex, col=col, lwd=lwd, pch=pch, axes=FALSE, xlab="", ylab=""))
+            state$usr <<- par("usr")
+            if (!is.null(state$level)) {
+                dmsg("spiciness profile... ", vectorShow(state$level))
+                with(default$focus,
+                    points(state$data$spiciness0[state$level], state$data$yProfile[state$level],
+                        cex=cex, col=col, lwd=lwd, pch=pch))
+            }
+            tags <- getTags(state$file)
+            if (length(tags$tag) > 0) {
+                with(default$tag,
+                    points(state$data$spiciness0[tags$level], state$data$yProfile[tags$level],
+                        cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
+            }
+            axis(side=2)
+            axis(side=3)
+            mtext(state$data$ylab, side=2, line=1.5)
+            mtext(resizableLabel("spiciness0"), side=3, line=1.5)
+            box()
+
         } else if (input$view == "TS") {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
-            x <- state$data$salinity[state$visible]
-            y <- state$data$temperature[state$visible]
+            x <- state$data$SA[state$visible]
+            y <- state$data$CT[state$visible]
             p <- state$data$pressure[state$visible]
             ctd <- as.ctd(x, y, p)
             # Plot empty with visible data, but then add the actual full data.
             # That way, we can see tagged points even if they are in the 4%
             # within-plot buffer zone.  (I am not using xaxs="i" etc because
             # it can put intrusions on the axis.)
-            plotTS(ctd, eos="unesco", type="n")
-            points(state$data$salinity, state$data$theta, type=input$plotType,
+            plotTS(ctd, eos=eos, type="n")
+            points(state$data$SA, state$data$CT, type=input$plotType,
                 cex=default$TS$cex, col=default$TS$col, lwd=default$TS$lwd, pch=default$TS$pch)
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
-                    points(state$data$salinity[state$level], state$data$theta[state$level],
+                    points(state$data$SA[state$level], state$data$CT[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
             tags <- getTags(state$file)
             if (length(tags$tag) > 0) {
                 with(default$tag,
-                    points(state$data$salinity[tags$level], state$data$theta[tags$level],
+                    points(state$data$SA[tags$level], state$data$CT[tags$level],
                         cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
             }
         } else {
