@@ -3,13 +3,12 @@ eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
 library(oce)
 options(oceEOS=eos)
+source("database.R")
 debug <- 1
 
 library(shiny)
 library(shinyBS)
 library(shinycssloaders)
-library(DBI)
-library(RSQLite)
 
 helpMouse <- "<p><i>Mouse</i></p>
 <ul>
@@ -38,115 +37,43 @@ EG: 1=top of DD layer, 2=bottom of DD layer, 3=warm-salty peak, 4=cool-fresh pea
 
 overallHelp <- c(helpMouse, helpKeyboard)
 
-#dbname <- "initial value, which will be overwritten"
-
 pluralize <- function(n=1, singular="item", plural=NULL)
 {
     singular <- paste(n, singular)
-    if (is.null(plural)) {
+    if (is.null(plural))
         plural <- paste0(singular, "s")
-    }
     if (n == 1L) singular else plural
 }
 
-msg <- function(...) {
+msg <- function(...)
     cat(file=stderr(), ..., sep="")
-}
 
-dmsg <- function(...) {
+dmsg <- function(...)
     if (debug > 0) cat(file=stderr(), ..., sep="")
-}
 
-dprint <- function(...) {
+dprint <- function(...)
     if (debug > 0) print(file=stderr(), ...)
-}
-
-createDatabase <- function(dbname=getDatabaseName())
-{
-    if (!file.exists(dbname)) {
-        dmsg("creating '", dbname, "'\n")
-        con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
-        RSQLite::dbCreateTable(con, "version",
-            c("version"="INTEGER"))
-        RSQLite::dbWriteTable(con, "version", data.frame(version=1L), overwrite=TRUE)
-        RSQLite::dbCreateTable(con, "tags",
-            c("file"="TEXT", level="INT", tag="INT", analyst="TEXT", analysisTime="TIMESTAMP"))
-        RSQLite::dbDisconnect(con)
-    }
-}
-
-getTags <- function(file=NULL, dbname=getDatabaseName())
-{
-    tags <- NULL
-    if (file.exists(dbname)) {
-        con <- dbConnect(RSQLite::SQLite(), dbname)
-        if (RSQLite::dbExistsTable(con, "tags")) {
-            tags <- RSQLite::dbReadTable(con, "tags")
-            RSQLite::dbDisconnect(con)
-            if (!is.null(file)) {
-                tags <- tags[tags$file == file, ]
-            }
-        }
-    }
-    tags
-}
-
-removeTag <- function(file=NULL, level=NULL, dbname=NULL)
-{
-    dmsg("removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
-    con <- dbConnect(RSQLite::SQLite(), dbname)
-    tags <- RSQLite::dbReadTable(con, "tags")
-    remove <- which(tags$file == file & tags$level == level)
-    if (length(remove)) {
-        dmsg("will remove ", paste(remove, collapse=" "), "-th tag\n")
-        dmsg(" BEFORE levels are: ", paste(tags$level, collapse=" "), "\n")
-        tags <- tags[-remove, ]
-        dmsg(" AFTER  levels are: ", paste(tags$level, collapse=" "), "\n")
-        RSQLite::dbWriteTable(con, "tags", tags, overwrite=TRUE)
-    }
-    RSQLite::dbDisconnect(con)
-}
-
-
-saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL)
-{
-    # no checking on NULL; add that if we want to generalize
-    df <- data.frame(file=file, level=level, tag=tag, analyst=analyst, analysisTime=Sys.time())
-    #dprint(df)
-    #dmsg("saveTag(file=", file, ", level=", level, ", tag=", tag, ", analyst=", analyst, ", dbname=", dbname, ")")
-    con <- dbConnect(RSQLite::SQLite(), dbname)
-    RSQLite::dbAppendTable(con, "tags", df)
-    RSQLite::dbDisconnect(con)
-}
 
 findNearestLevel <- function(x, y, usr, data, view)
 {
     dmsg("findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
-    #dmsg("  ", vectorShow(usr))
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
-    #dmsg("  ", vectorShow(dx2))
-    #dmsg("  ", vectorShow(dy2))
     if (view == "T profile") {
         d2 <- (x - data$CT)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        #dmsg(sprintf("  T=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "S profile") {
         d2 <- (x - data$SA)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else if (view == "sigma profile") {
         d2 <- (x - data$sigma0)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
      } else if (view == "spiciness profile") {
         d2 <- (x - data$spiciness0)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
-        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
      } else if (view == "TS") {
         d2 <- (x - data$SA)^2/dx2 + (y - data$CT)^2/dy2
         nearest <- which.min(d2)
-        #dmsg(sprintf("  S=%.3f, p=%.3f -> index=%d\n", x, y, nearest))
     } else {
         stop("view=\"", view, "\" is not handled yet")
     }
@@ -229,26 +156,12 @@ ui <- fluidPage(
     fluidRow(
         uiOutput("plotPanel")))
 
-getUserName <- function()
-{
-    # FIXME: maybe use Sys.info()[["user"]] ???
-    res <- if (.Platform$OS.type == "windows") Sys.getenv("USERNAME") else Sys.getenv("USER")
-    if (is.null(res) || 0L == nchar(res)) {
-        res <- "unknown"
-    }
-    res
-}
 
-getDatabaseName <- function(prefix="~/ctd_tag")
-{
-    file.path(paste0(prefix, "_", getUserName(), ".db"))
-}
 
 server <- function(input, output, session) {
     createDatabase()
-    file <- shiny::getShinyOption("file")
+    file <- normalizePath(shiny::getShinyOption("file"))
     ctd <- oce::read.oce(file)
-    #dbname <<- "ctd.db"
     data <- list(pressure=ctd@data$pressure, salinity=ctd@data$salinity, temperature=ctd@data$temperature)
     data$yProfile <- data$pressure
     data$ylabProfile <- resizableLabel("p")
@@ -306,9 +219,6 @@ server <- function(input, output, session) {
                 } else {
                     dmsg("responding to '", key, "' click for tagging\n")
                     if (state$visible[state$level]) {
-                        #dmsg("  visible. should tag at level ", state$level, "\n")
-                        #dmsg("  analystName=\"", state$analystName, "\"\n")
-                        #dmsg("  file=\"", state$file, "\"\n")
                         saveTag(file=state$file, level=state$level, tag=as.integer(key),
                             analyst=state$analyst, dbname=getDatabaseName())
                         state$step <<- state$step + 1 # other shiny elements notice this
@@ -319,7 +229,8 @@ server <- function(input, output, session) {
             } else if (key == "i") {
                 if (!is.null(input$hover$x)) {
                     dmsg("responding to 'i' click for zooming in\n")
-                    nearestLevel <- findNearestLevel(input$hover$x, input$hover$y, state$usr, state$data, input$view)
+                    nearestLevel <- findNearestLevel(input$hover$x, input$hover$y, state$usr,
+                        state$data, input$view)
                     span <- sum(state$visible)
                     if (span > default$focus$minimumSpan) {
                         span <- span / 4
@@ -543,7 +454,7 @@ server <- function(input, output, session) {
         }
     }, height=500, pointsize=16)
 }
-#shinyOptions(file="/Users/kelley/Dropbox/data/arctic/beaufort/2012/d201211_0048.cnv")
-shiny::shinyOptions(file="/Users/kelley/Dropbox/data/arctic/beaufort/2012/d201211_0047.cnv")
+
+shiny::shinyOptions(file="d201211_0048.cnv")
 shinyApp(ui, server)
 
