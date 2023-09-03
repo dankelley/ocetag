@@ -1,6 +1,9 @@
 library(DBI)
 library(RSQLite)
 
+dmsg <- function(debug, ...)
+    if (debug > 0) cat(file=stderr(), ..., sep="")
+
 getUserName <- function()
 {
     # FIXME: maybe use Sys.info()[["user"]] ???
@@ -16,8 +19,7 @@ getDatabaseName <- function(prefix="~/ctd_tag")
 createDatabase <- function(dbname=getDatabaseName(), debug=0)
 {
     if (!file.exists(dbname)) {
-        if (debug > 0)
-            msg("creating '", dbname, "'\n")
+        dmsg(debug, "creating '", dbname, "'\n")
         con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
         RSQLite::dbCreateTable(con, "version",
             c("version"="INTEGER"))
@@ -46,19 +48,15 @@ getTags <- function(file=NULL, dbname=getDatabaseName(), debug=0)
 
 removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
 {
-    if (debug > 0)
-        msg("removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
+    dmsg(debug, "removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
     con <- dbConnect(RSQLite::SQLite(), dbname)
     tags <- RSQLite::dbReadTable(con, "tags")
     remove <- which(tags$file == file & tags$level == level)
     if (length(remove)) {
-        if (debug > 0) {
-            msg("will remove ", paste(remove, collapse=" "), "-th tag\n")
-            msg(" BEFORE levels are: ", paste(tags$level, collapse=" "), "\n")
-        }
+        dmsg(debug, "will remove ", paste(remove, collapse=" "), "-th tag\n")
+        dmsg(debug, " BEFORE levels are: ", paste(tags$level, collapse=" "), "\n")
         tags <- tags[-remove, ]
-        if (debug > 0)
-            msg(" AFTER  levels are: ", paste(tags$level, collapse=" "), "\n")
+        dmsg(debug, " AFTER  levels are: ", paste(tags$level, collapse=" "), "\n")
         RSQLite::dbWriteTable(con, "tags", tags, overwrite=TRUE)
     }
     RSQLite::dbDisconnect(con)

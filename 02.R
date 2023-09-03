@@ -171,7 +171,7 @@ ui <- fluidPage(
             column(12, uiOutput("databasePanel")))))
 
 server <- function(input, output, session) {
-    createDatabase(debug=debug)
+    createDatabase(debug=debug-1)
     file <- normalizePath(shiny::getShinyOption("file"))
     directory <- shiny::getShinyOption("directory")
     suffix <- shiny::getShinyOption("suffix")
@@ -207,12 +207,12 @@ server <- function(input, output, session) {
     )
 
     focusIsTagged <- function() {
-        !is.null(state$level) && (state$level %in% getTags(state$file, debug=debug)$level)
+        !is.null(state$level) && (state$level %in% getTags(state$file, debug=debug-1)$level)
     }
 
     focusTags <- function() {
         if (!is.null(state$level) && !is.null(state$file)) {
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, debug=debug-1)
             tags[tags$level==state$level, "tag"]
         }
     }
@@ -245,7 +245,7 @@ server <- function(input, output, session) {
                     dmsg("responding to '", key, "' click for tagging\n")
                     if (state$visible[state$level]) {
                         saveTag(file=state$file, level=state$level, tag=as.integer(key),
-                            analyst=state$analyst, dbname=getDatabaseName(), debug=debug)
+                            analyst=state$analyst, dbname=getDatabaseName(), debug=debug-1)
                         state$step <<- state$step + 1 # other shiny elements notice this
                     } else {
                         showNotification("No focus points in current view")
@@ -291,7 +291,7 @@ server <- function(input, output, session) {
             } else if (key == "x") {
                 dmsg("responding to 'x' to remove tag if focussed\n")
                 if (focusIsTagged()) {
-                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName(), debug=debug)
+                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName(), debug=debug-1)
                     state$step <<- state$step + 1 # other shiny elements notice this
                 }
             } else if (key == "u") {
