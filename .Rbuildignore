@@ -7,3 +7,4 @@ man-roxygen
 ^docs$
 README_developer.md
 .github
+_pkgdown.yml
