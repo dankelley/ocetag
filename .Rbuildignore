@@ -5,3 +5,5 @@ man-roxygen
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^docs$
+README_developer.md
+.github

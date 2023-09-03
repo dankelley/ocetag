@@ -45,7 +45,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/dankelley/ctd_tag/" class="external-link">
+  <a href="https://github.com/dankelley/ocetag/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -63,69 +63,8 @@
       </header><div class="row">
   <div class="contents col-md-9">
 
-<div class="section level1">
-<div class="page-header"><h1 id="files">Files<a class="anchor" aria-label="anchor" href="#files"></a>
-</h1></div>
-<div class="section level2">
-<h2 id="id_01r">01.R<a class="anchor" aria-label="anchor" href="#id_01r"></a>
-</h2>
-<p>A basic app, essentially a test of whether this GUI is acceptable. Brushing is not permitted here, either for selection or zooming. Keystrokes are used for both actions, and also for navigation up and down in the water column.</p>
-</div>
-<div class="section level2">
-<h2 id="id_02r">02.R<a class="anchor" aria-label="anchor" href="#id_02r"></a>
-</h2>
-<p>As 01.R but</p>
-<ol style="list-style-type: decimal">
-<li>use SA, not S</li>
-<li>use CT, not theta</li>
-<li>add sigma0 profile</li>
-<li>add spiciness0 profile</li>
-<li>show tags at focus point (if any) in status box</li>
-<li>indicate database name in status box</li>
-<li>show database entries</li>
-<li>use full pathnames in CTD and database files</li>
-</ol>
-</div>
-</div>
-<div class="section level1">
-<h1 id="development-ideas">Development ideas<a class="anchor" aria-label="anchor" href="#development-ideas"></a>
-</h1>
-<ol style="list-style-type: decimal">
-<li>
-<input type="checkbox">Make a function to call the app, with parameters such as
-<ol style="list-style-type: decimal">
-<li>
-<input type="checkbox">directory holding files</li>
-<li>
-<input type="checkbox">file suffix (.odf or .cnv by default)</li>
-<li>
-<input type="checkbox">something about default scheme (for flags)</li>
-<li>
-<input type="checkbox">name of database file</li>
-<li>
-<input type="checkbox">etc</li>
-</ol>
-</li>
-<li>
-<input type="checkbox">Have an interface to turn on suggested QC actions, e.g.
-<ol style="list-style-type: decimal">
-<li>
-<input type="checkbox">highlight density inversions</li>
-<li>
-<input type="checkbox">trim-to-descent</li>
-</ol>
-</li>
-<li>
-<input type="checkbox">Have an interface to accept/reject suggested actions (and maybe record this in the database).</li>
-</ol>
-</div>
-<div class="section level1">
-<h1 id="related-development-ideas">Related development ideas<a class="anchor" aria-label="anchor" href="#related-development-ideas"></a>
-</h1>
-<ol style="list-style-type: decimal">
-<li>Develop a tool for exporting oce objects to relevant output formats. This will need to be undertaken by someone with R expertise, SQL expertise, and of course expertise in writing the output format in question.</li>
-</ol>
-</div>
+
+<p>This package provides a function named ctdTag(), an R-shiny tool that displays CTD data and facilitates adding tags for features of interest detected by eye.</p>
 
   </div>
 
@@ -133,8 +72,8 @@
     <div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/dankelley/ctd_tag/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/dankelley/ctd_tag/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/dankelley/ocetag/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/dankelley/ocetag/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -160,7 +99,13 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://img.shields.io/github/last-commit/dankelley/ocetag" class="external-link"><img src="https://img.shields.io/github/last-commit/dankelley/ocetag" alt="GitHub last commit"></a></li>
+<li><a href="https://github.com/dankelley/ocetag/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/dankelley/ocetag/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+</ul>
+</div>
 
   </div>
 </div>

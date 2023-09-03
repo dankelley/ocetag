@@ -9,8 +9,8 @@ Depends: R (>= 3.5.0), shiny, oce (>= 1.8-2), DT, RSQLite
 Suggests: knitr, rmarkdown, testthat
 License: GPL (>= 3)
 Encoding: UTF-8
-BugReports: https://github.com/dankelley/ctd_tag/issues
-URL: https://dankelley.github.io/ctd_tag/
+BugReports: https://github.com/dankelley/ocetag/issues
+URL: https://dankelley.github.io/ocetag/
 RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 BuildVignettes: true
