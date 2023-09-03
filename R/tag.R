@@ -1,8 +1,8 @@
 # vim:textwidth=80:expandtab:shiftwidth=4:softtabstop=4
 eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
-library(shiny)
-library(DT)
+requireNamespace("shiny")
+requireNamespace("DT")
 library(oce)
 options(oceEOS=eos)
 
@@ -480,7 +480,14 @@ server <- function(input, output, session) {
     })
 }
 
-#' Run an R-shiny app to facilitating tagging features on CTD profile data.
+#' Run an Shiny App for Tagging CTD Features
+#'
+#' Instructions are provided with the Help button (or by typing `?`). Tagging
+#' information is stored in a sqlite3 database file, by default named
+#' `ocetag_USERNAME.db`, where `USERNAME` is the login name of the analyst.
+#' If this file does not exist, it is created; otherwise, the existing
+#' tags (for the file undergoing analysis) are displayed on the plots,
+#' as a starting point.
 #'
 #' @param file character value naming a file to tag. NOTE: this
 #' argument might go away in the future, or at least become optional,

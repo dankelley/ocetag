@@ -1,5 +1,5 @@
-Package: ctdtag
-Title: Tag CTD data
+Package: ocetag
+Title: Tag Features of Oceanographic Data
 Version: 0.0.1
 Authors@R: c(
     person(given="Dan", family="Kelley", email="dan.kelley@dal.ca", role=c("aut", "cre"), comment=c(ORCID="0000-0001-7808-5911")))

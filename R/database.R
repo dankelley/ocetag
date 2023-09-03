@@ -29,7 +29,7 @@ getUserName <- function()
 #' @author Dan Kelley
 #'
 #' @export
-getDatabaseName <- function(prefix="~/ctd_tag")
+getDatabaseName <- function(prefix="~/ocetag")
 {
     normalizePath(paste0(prefix, "_", getUserName(), ".db"))
 }

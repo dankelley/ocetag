@@ -4,7 +4,7 @@
 \alias{getDatabaseName}
 \title{Get name of database}
 \usage{
-getDatabaseName(prefix = "~/ctd_tag")
+getDatabaseName(prefix = "~/ocetag")
 }
 \arguments{
 \item{prefix}{character value used as the start of the name.  The default

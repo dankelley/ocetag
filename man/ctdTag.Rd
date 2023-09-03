@@ -2,7 +2,7 @@
 % Please edit documentation in R/tag.R
 \name{ctdTag}
 \alias{ctdTag}
-\title{Run an R-shiny app to facilitating tagging features on CTD profile data.}
+\title{Run an Shiny App for Tagging CTD Features}
 \usage{
 ctdTag(file = "d201211_0048.cnv")
 }
@@ -12,7 +12,12 @@ argument might go away in the future, or at least become optional,
 if a directory-searching facility is added.}
 }
 \description{
-Run an R-shiny app to facilitating tagging features on CTD profile data.
+Instructions are provided with the Help button (or by typing \verb{?}). Tagging
+information is stored in a sqlite3 database file, by default named
+\code{ocetag_USERNAME.db}, where \code{USERNAME} is the login name of the analyst.
+If this file does not exist, it is created; otherwise, the existing
+tags (for the file undergoing analysis) are displayed on the plots,
+as a starting point.
 }
 \author{
 Dan Kelley
