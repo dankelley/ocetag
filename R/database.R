@@ -1,9 +1,16 @@
-library(DBI)
 library(RSQLite)
 
 dmsg <- function(debug, ...)
     if (debug > 0) cat(file=stderr(), ..., sep="")
 
+#' Get user name
+#'
+#' @return [getUserName()] returns a character value naming the user, i.e.
+#' holding the user's login name.
+#'
+#' @author Dan Kelley
+#'
+#' @export
 getUserName <- function()
 {
     # FIXME: maybe use Sys.info()[["user"]] ???
@@ -11,11 +18,32 @@ getUserName <- function()
     if (is.null(res) || 0L == nchar(res)) "unknown" else res
 }
 
+#' Get name of database
+#'
+#' @param prefix character value used as the start of the name.  The default
+#' value places the database in the user's top level.
+#'
+#' @return [getDatabaseName()] returns a character string holding the full
+#' pathname of the database.
+#'
+#' @author Dan Kelley
+#'
+#' @export
 getDatabaseName <- function(prefix="~/ctd_tag")
 {
     normalizePath(paste0(prefix, "_", getUserName(), ".db"))
 }
 
+#' Create a tagging of database
+#'
+#' @template dbnameTemplate
+#'
+#' @template debugTemplate
+#'
+#' @author Dan Kelley
+#'
+#' @importFrom RSQLite dbConnect dbCreateTable dbDisconnect dbReadTable dbWriteTable SQLite 
+#' @export
 createDatabase <- function(dbname=getDatabaseName(), debug=0)
 {
     if (!file.exists(dbname)) {
@@ -30,6 +58,20 @@ createDatabase <- function(dbname=getDatabaseName(), debug=0)
     }
 }
 
+#' Get tags from the database
+#'
+#' @param file character value naming the CTD file.  Only items relating
+#' to this file are returned.
+#'
+#' @template dbnameTemplate
+#'
+#' @template debugTemplate
+#'
+#' @return [getTags()] returns a vector of tag values.
+#'
+#' @author Dan Kelley
+#'
+#' @export
 getTags <- function(file=NULL, dbname=getDatabaseName(), debug=0)
 {
     tags <- NULL
@@ -46,6 +88,20 @@ getTags <- function(file=NULL, dbname=getDatabaseName(), debug=0)
     tags
 }
 
+#' Remove a tag
+#'
+#' @param file character value naming the CTD file.  Only items relating
+#' to this file are returned.
+#'
+#' @param level integer specifying the sequence value of the data point that was tagged.
+#'
+#' @template dbnameTemplate
+#'
+#' @template debugTemplate
+#'
+#' @author Dan Kelley
+#'
+#' @export
 removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
 {
     dmsg(debug, "removeTag(file=", file, ", level=", level, ", dbname=", dbname, "\n")
@@ -62,6 +118,23 @@ removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
     RSQLite::dbDisconnect(con)
 }
 
+#' Save a tag
+#'
+#' @param file character value naming the CTD file.
+#'
+#' @param level integer specifying the sequence value of the data point that was tagged.
+#'
+#' @template tagTemplate
+#'
+#' @template analystTemplate
+#'
+#' @template dbnameTemplate
+#'
+#' @template debugTemplate
+#'
+#' @author Dan Kelley
+#'
+#' @export
 saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL, debug=0)
 {
     # no checking on NULL; add that if we want to generalize

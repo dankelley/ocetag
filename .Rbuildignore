@@ -1,0 +1,7 @@
+README.Rmd
+.lintr
+d201211_0048.cnv
+man-roxygen
+^.*\.Rproj$
+^\.Rproj\.user$
+^docs$

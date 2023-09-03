@@ -8,17 +8,6 @@ library(shinycssloaders)
 library(oce)
 options(oceEOS=eos)
 
-msg <- function(...)
-    cat(file=stderr(), ..., sep="")
-
-dmsg <- function(...)
-    if (debug > 0) cat(file=stderr(), ..., sep="")
-
-dprint <- function(...)
-    if (debug > 0) print(file=stderr(), ...)
-
-source("database.R") # database functions
-
 debug <- 1
 
 helpMouse <- "<p><i>Mouse</i></p>
@@ -50,15 +39,6 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 "
 
 overallHelp <- c(helpMouse, helpKeyboard)
-
-pluralize <- function(n=1, singular="item", plural=NULL)
-{
-    singular <- paste(n, singular)
-    if (is.null(plural))
-        plural <- paste0(singular, "s")
-    if (n == 1L) singular else plural
-}
-
 
 findNearestLevel <- function(x, y, usr, data, view)
 {
@@ -130,6 +110,15 @@ default <- list(
     focus=list(cex=2, col="purple", lwd=2, pch=3, minimumSpan=5L),
     tag=list(cex=2, lwd=2, pch=1))
 
+#' @importFrom shiny actionButton br brushOpts column fluidPage fluidRow getShinyOption p
+#' plotOutput observeEvent reactiveValues renderPlot renderText renderUI selectInput
+#' showNotification shinyApp shinyOptions stopApp stopApp uiOutput wellPanel
+#'
+#' @importFrom DT renderDT
+#'
+#' @importFrom graphics axis box mtext par text
+#'
+#' @importFrom utils head tail
 ui <- fluidPage(
     #headerPanel(title="", windowTitle=""),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
@@ -170,6 +159,7 @@ ui <- fluidPage(
         fluidRow(
             column(12, uiOutput("databasePanel")))))
 
+#' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
 server <- function(input, output, session) {
     createDatabase(debug=debug-1)
     file <- normalizePath(shiny::getShinyOption("file"))
@@ -492,7 +482,18 @@ server <- function(input, output, session) {
     })
 }
 
-#shiny::shinyOptions(file="d201211_0048.cnv", directory=".", suffix="cnv")
-shiny::shinyOptions(file="d201211_0048.cnv")
-shinyApp(ui, server)
+#' Run an R-shiny app to facilitating tagging features on CTD profile data.
+#'
+#' @param file character value naming a file to tag. NOTE: this
+#' argument might go away in the future, or at least become optional,
+#' if a directory-searching facility is added.
+#'
+#' @author Dan Kelley
+#'
+#' @export
+ctdTag <- function(file="d201211_0048.cnv")
+{
+    shinyOptions(file=file)
+    shinyApp(ui, server)
+}
 
