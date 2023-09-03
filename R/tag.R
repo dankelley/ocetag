@@ -4,7 +4,6 @@ eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 library(shiny)
 library(DT)
 library(shinyBS)
-library(shinycssloaders)
 library(oce)
 options(oceEOS=eos)
 
