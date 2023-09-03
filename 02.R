@@ -173,6 +173,10 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     createDatabase(debug=debug)
     file <- normalizePath(shiny::getShinyOption("file"))
+    directory <- shiny::getShinyOption("directory")
+    suffix <- shiny::getShinyOption("suffix")
+    dmsg(oce::vectorShow(directory))
+    dmsg(oce::vectorShow(suffix))
     ctd <- oce::read.oce(file)
     data <- list(
         longitude=ctd[["longitude"]][1],
@@ -488,6 +492,7 @@ server <- function(input, output, session) {
     })
 }
 
+#shiny::shinyOptions(file="d201211_0048.cnv", directory=".", suffix="cnv")
 shiny::shinyOptions(file="d201211_0048.cnv")
 shinyApp(ui, server)
 
