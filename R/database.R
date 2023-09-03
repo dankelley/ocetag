@@ -1,8 +1,5 @@
 library(RSQLite)
 
-dmsg <- function(debug, ...)
-    if (debug > 0) cat(file=stderr(), ..., sep="")
-
 #' Get user name
 #'
 #' @return [getUserName()] returns a character value naming the user, i.e.
@@ -31,7 +28,7 @@ getUserName <- function()
 #' @export
 getDatabaseName <- function(prefix="~/ocetag")
 {
-    normalizePath(paste0(prefix, "_", getUserName(), ".db"))
+    path.expand(paste0(prefix, "_", getUserName(), ".db"))
 }
 
 #' Create a tagging of database
@@ -74,6 +71,7 @@ createDatabase <- function(dbname=getDatabaseName(), debug=0)
 #' @export
 getTags <- function(file=NULL, dbname=getDatabaseName(), debug=0)
 {
+    dmsg(debug, "getTags(file=\"", file, "\", dbname=\"", dbname, "\"\n")
     tags <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
@@ -138,6 +136,7 @@ removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
 saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL, debug=0)
 {
     # no checking on NULL; add that if we want to generalize
+    dmsg(debug, "saveTag(..., level=", level, ", tag=", tag, ", ...)\n")
     df <- data.frame(file=file, level=level, tag=tag, analyst=analyst, analysisTime=Sys.time())
     con <- dbConnect(RSQLite::SQLite(), dbname)
     RSQLite::dbAppendTable(con, "tags", df)

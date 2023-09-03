@@ -1,6 +1,6 @@
 # Development ideas
 
-1. [ ] Make ctdTag() handle parameters such as
+1. [ ] Make ctdtag() handle parameters such as
    a. [ ] directory holding files
    b. [ ] file suffix (.odf or .cnv by default)
    c. [ ] something about default scheme (for flags)

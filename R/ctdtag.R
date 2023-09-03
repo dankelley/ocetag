@@ -6,7 +6,7 @@ requireNamespace("DT")
 library(oce)
 options(oceEOS=eos)
 
-debug <- 1
+debug <- 2
 
 helpMouse <- "<p><i>Mouse</i></p>
 <ul>
@@ -38,9 +38,9 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 
 overallHelp <- c(helpMouse, helpKeyboard)
 
-findNearestLevel <- function(x, y, usr, data, view)
+findNearestLevel <- function(x, y, usr, data, view, debug=0)
 {
-    dmsg("findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
+    dmsg(debug, "findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
     if (view == "T profile") {
@@ -61,7 +61,7 @@ findNearestLevel <- function(x, y, usr, data, view)
     } else {
         stop("view=\"", view, "\" is not handled yet")
     }
-    dmsg("  returning ", nearest, "\n")
+    dmsg(debug, "  returning ", nearest, "\n")
     nearest
 }
 
@@ -149,22 +149,23 @@ ui <- fluidPage(
     wellPanel(
         fluidRow(
             uiOutput("plotPanel"))),
-    br(),
-    br(),
-    p("Tag Table"),
-    br(),
     wellPanel(
+        p("Tag Table"),
         fluidRow(
             column(12, uiOutput("databasePanel")))))
 
 #' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
 server <- function(input, output, session) {
-    createDatabase(debug=debug-1)
     file <- normalizePath(shiny::getShinyOption("file"))
+    debug <- shiny::getShinyOption("debug", default=0)
+    prefix <- shiny::getShinyOption("prefix", default="~/ctdtag")
+    plotHeight <- shiny::getShinyOption("plotHeight", default=200)
+    dbname <- getDatabaseName(prefix=prefix)
+    createDatabase(dbname=dbname, debug=debug-1)
     directory <- shiny::getShinyOption("directory")
     suffix <- shiny::getShinyOption("suffix")
-    dmsg(oce::vectorShow(directory))
-    dmsg(oce::vectorShow(suffix))
+    #dmsg(debug, oce::vectorShow(directory))
+    #dmsg(debug, oce::vectorShow(suffix))
     ctd <- oce::read.oce(file)
     data <- list(
         longitude=ctd[["longitude"]][1],
@@ -195,12 +196,12 @@ server <- function(input, output, session) {
     )
 
     focusIsTagged <- function() {
-        !is.null(state$level) && (state$level %in% getTags(state$file, debug=debug-1)$level)
+        !is.null(state$level) && (state$level %in% getTags(state$file, dbname=dbname, debug=debug-1)$level)
     }
 
     focusTags <- function() {
         if (!is.null(state$level) && !is.null(state$file)) {
-            tags <- getTags(state$file, debug=debug-1)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             tags[tags$level==state$level, "tag"]
         }
     }
@@ -219,21 +220,20 @@ server <- function(input, output, session) {
     observeEvent(input$click,
         {
             state$level  <- findNearestLevel(input$click$x, input$click$y, state$usr, state$data, input$view)
-            #dmsg("state$level =", state$level, "\n")
+            #dmsg(debug, "state$level =", state$level, "\n")
         })
 
     observeEvent(input$keypressTrigger,
         {
             key <- intToUtf8(input$keypress)
-            #dmsg(key, "\n")
+            #dmsg(debug, key, "\n")
             if (key %in% as.character(0:9)) {
                 if (is.null(state$level)) {
                     showNotification("No focus points")
                 } else {
-                    dmsg("responding to '", key, "' click for tagging\n")
+                    dmsg(debug, "responding to '", key, "' to tag the focus point\n")
                     if (state$visible[state$level]) {
-                        saveTag(file=state$file, level=state$level, tag=as.integer(key),
-                            analyst=state$analyst, dbname=getDatabaseName(), debug=debug-1)
+                        saveTag(file=state$file, level=state$level, tag=as.integer(key), analyst=state$analyst, dbname=dbname, debug=debug-1)
                         state$step <<- state$step + 1 # other shiny elements notice this
                     } else {
                         showNotification("No focus points in current view")
@@ -241,7 +241,7 @@ server <- function(input, output, session) {
                 }
             } else if (key == "i") {
                 if (!is.null(input$hover$x)) {
-                    dmsg("responding to 'i' click for zooming in\n")
+                    dmsg(debug, "responding to 'i': zoom in\n")
                     nearestLevel <- findNearestLevel(input$hover$x, input$hover$y, state$usr,
                         state$data, input$view)
                     span <- sum(state$visible)
@@ -252,16 +252,16 @@ server <- function(input, output, session) {
                     }
                 }
             } else if (key == "o") {
-                dmsg("responding to 'o' click for zooming out\n")
+                dmsg(debug, "responding to 'o': zoom out\n")
                 limits <- visibleToLimits(state$visible)
                 span <- diff(limits)
                 limits <- limitsTrim(limits + c(-span, span), state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
             } else if (key == "O") {
-                dmsg("responding to 'O' click to return to full-scale\n")
+                dmsg(debug, "responding to 'O': view full-scale\n")
                 state$visible <- rep(TRUE, state$ndata)
             } else if (key == "j") {
-                dmsg("responding to 'j' click for moving down in water column\n")
+                dmsg(debug, "responding to 'j': move down in water column\n")
                 if (!tail(state$visible, 1)) {
                     limits <- visibleToLimits(state$visible)
                     span <- diff(limits)
@@ -269,7 +269,7 @@ server <- function(input, output, session) {
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
             } else if (key == "k") {
-                dmsg("responding to 'k' click for moving up in water column\n")
+                dmsg(debug, "responding to 'k': move up in water column\n")
                 if (!head(state$visible, 1)) {
                     limits <- visibleToLimits(state$visible)
                     span <- diff(limits)
@@ -277,13 +277,13 @@ server <- function(input, output, session) {
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
             } else if (key == "x") {
-                dmsg("responding to 'x' to remove tag if focussed\n")
+                dmsg(debug, "responding to 'x' to remove tag\n")
                 if (focusIsTagged()) {
-                    removeTag(file=state$file, level=state$level, dbname=getDatabaseName(), debug=debug-1)
+                    removeTag(file=state$file, level=state$level, dbname=dbname, debug=debug-1)
                     state$step <<- state$step + 1 # other shiny elements notice this
                 }
             } else if (key == "u") {
-                dmsg("responding to 'u' to remove focus point (i.e. crossed point)\n")
+                dmsg(debug, "responding to 'u' to remove focus point (i.e. crossed point)\n")
                 state$level <<- NULL
                 state$step <<- state$step + 1 # other shiny elements notice this
             } else if (key == "?") {
@@ -293,7 +293,7 @@ server <- function(input, output, session) {
         })
 
     observeEvent(input$yProfile, {
-        #dmsg("observed input$yProfile=\"", input$yProfile, "\"\n")
+        #dmsg(debug, "observed input$yProfile=\"", input$yProfile, "\"\n")
         if (input$yProfile == "pressure") {
             state$data$yProfile <<- data$pressure
             state$data$ylabProfile <<- resizableLabel("p")
@@ -313,7 +313,7 @@ server <- function(input, output, session) {
         {
             state$step # to cause shiny to update this
             file <- state$file
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             tags <- tags[tags$file == file, ]
             tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
             focusMsg <- if (focusIsTagged()) {
@@ -322,13 +322,14 @@ server <- function(input, output, session) {
             } else {
                 ""
             }
-            paste0("Database \"", getDatabaseName(), "\" ", tagMsg, " ", focusMsg)
+            paste0("Database \"", dbname, "\" ", tagMsg, " ", focusMsg)
         })
 
     output$plotPanel <- renderUI({
         state$step # cause a shiny update
         plotOutput("plot",
             brush=brushOpts("brush", delay=1000, resetOnNew=TRUE),
+            height=plotHeight,
             hover="hover",
             click="click")
     })
@@ -349,7 +350,7 @@ server <- function(input, output, session) {
                     points(state$data$CT[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$CT[tags$level], state$data$yProfile[tags$level],
@@ -374,7 +375,7 @@ server <- function(input, output, session) {
                     points(state$data$SA[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$yProfile[tags$level],
@@ -395,12 +396,12 @@ server <- function(input, output, session) {
                     axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
-                dmsg("sigma profile... ", vectorShow(state$level))
+                dmsg(debug, "sigma profile... ", vectorShow(state$level))
                 with(default$focus,
                     points(state$data$sigma0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$sigma0[tags$level], state$data$yProfile[tags$level],
@@ -421,12 +422,12 @@ server <- function(input, output, session) {
                     axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
-                dmsg("spiciness profile... ", vectorShow(state$level))
+                dmsg(debug, "spiciness profile... ", vectorShow(state$level))
                 with(default$focus,
                     points(state$data$spiciness0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$spiciness0[tags$level], state$data$yProfile[tags$level],
@@ -440,8 +441,8 @@ server <- function(input, output, session) {
 
         } else if (input$view == "TS") {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
-            x <- state$data$SA[state$visible]
-            y <- state$data$CT[state$visible]
+            x <- state$data$salinity[state$visible]
+            y <- state$data$temperature[state$visible]
             p <- state$data$pressure[state$visible]
             ctd <- as.ctd(x, y, p, longitude=data$longitude[1], latitude=data$latitude[1])
             # Plot empty with visible data, but then add the actual full data.
@@ -458,7 +459,7 @@ server <- function(input, output, session) {
                     points(state$data$SA[state$level], state$data$CT[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, debug=debug)
+            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$CT[tags$level],
@@ -468,23 +469,31 @@ server <- function(input, output, session) {
             plot(0:1, 0:1, xlab="", ylab="", axes=FALSE, type="n")
             text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
         }
-    }, height=500, pointsize=14)
+    #}, height=500, pointsize=14)
+    }, pointsize=14)
 
     output$databasePanel <- renderUI({
         state$step # to cause shiny to update this
-        tags <- getTags(state$file, debug=debug)
-        o <- order(tags$level)
-        tags <- tags[o, ]
-        tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
-        DT::renderDT(tags)
+        tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+        if (!is.null(tags)) {
+            o <- order(tags$level)
+            tags <- tags[o, ]
+            tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
+            DT::renderDT(tags)
+        }
     })
 }
 
 #' Run an Shiny App for Tagging CTD Features
 #'
+#' The tags are stored in a SQLite database, for ease of processing in R or other
+#' software systems.  The analyst's name and the time of analysis is stored along
+#' with each time stamp, to facilitate combining the judgements made by multiple
+#' analysts.  A SQLite database is used for this storage of tags.
+#'
 #' Instructions are provided with the Help button (or by typing `?`). Tagging
 #' information is stored in a sqlite3 database file, by default named
-#' `ocetag_USERNAME.db`, where `USERNAME` is the login name of the analyst.
+#' `ctdtag_USERNAME.db`, where `USERNAME` is the login name of the analyst.
 #' If this file does not exist, it is created; otherwise, the existing
 #' tags (for the file undergoing analysis) are displayed on the plots,
 #' as a starting point.
@@ -493,12 +502,18 @@ server <- function(input, output, session) {
 #' argument might go away in the future, or at least become optional,
 #' if a directory-searching facility is added.
 #'
+#' @param prefix character value for the start of the name of the database file.
+#'
+#' @param plotHeight numeric value for the height of the plot, in pixels.
+#'
+#' @template debugTemplate
+#'
 #' @author Dan Kelley
 #'
 #' @export
-ctdTag <- function(file="d201211_0048.cnv")
+ctdtag <- function(file="d201211_0048.cnv", prefix="~/ctdtag", plotHeight=500, debug=0)
 {
-    shinyOptions(file=file)
+    shinyOptions(file=file, prefix=prefix, plotHeight=plotHeight, debug=debug)
     shinyApp(ui, server)
 }
 
