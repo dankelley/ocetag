@@ -126,11 +126,12 @@ default <- list(
 #'
 #' @importFrom utils head tail
 uiCtdtag <- fluidPage(
-    tags$head(tags$style(HTML(".well {padding: 2px; min-height: 8px; margin: 2px;}"))),
+    tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style="background:#e6f3ff;cursor:crosshair;",
     wellPanel(
         fluidRow(
+            column(3, uiOutput("fileSelect")),
             column(1, actionButton("help", "Help")),
             column(1, actionButton("quit", "Quit")),
             column(3, selectInput("view", label=NULL,
@@ -162,58 +163,44 @@ uiCtdtag <- fluidPage(
         fluidRow(
             uiOutput("plotPanel"))),
     wellPanel(
-        p("Tag Table"),
+        p("Tags in Database"),
         fluidRow(
             column(12, uiOutput("databasePanel")))))
 
 #' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
 serverCtdtag <- function(input, output, session) {
-    file <- normalizePath(shiny::getShinyOption("file"))
-    debug <- shiny::getShinyOption("debug", default=0)
-    prefix <- shiny::getShinyOption("prefix", default="~/ctdtag")
+    path <- shiny::getShinyOption("path", default=".")
+    suffix <- shiny::getShinyOption("suffix", default=".cnv")
+    dbprefix <- shiny::getShinyOption("dbprefix", default="~/ctdtag")
     plotHeight <- shiny::getShinyOption("plotHeight", default=200)
-    dbname <- getDatabaseName(prefix=prefix)
+    debug <- shiny::getShinyOption("debug", default=0)
+    dbname <- getDatabaseName(dbprefix=dbprefix)
     createDatabase(dbname=dbname, debug=debug-1)
-    directory <- shiny::getShinyOption("directory")
-    suffix <- shiny::getShinyOption("suffix")
-    #dmsg(debug, oce::vectorShow(directory))
-    #dmsg(debug, oce::vectorShow(suffix))
-    ctd <- oce::read.oce(file)
-    data <- list(
-        longitude=ctd[["longitude"]][1],
-        latitude=ctd[["latitude"]][1],
-        pressure=ctd[["pressure"]],
-        salinity=ctd[["salinity"]],
-        temperature=ctd[["temperature"]],
-        CT=ctd[["CT"]],
-        SA=ctd[["SA"]],
-        sigma0=ctd[["sigma0"]],
-        spiciness0=ctd[["spiciness0"]])
-    # The next two get altered by user actions
-    data$yProfile <- data$pressure
-    data$ylabProfile <- resizableLabel("p")
+
     # 'state', being reactive, creates a gateway between R and the webserver
     # that displays the app. Note that 'step' is used when one R element needs
     # to tell other elements that a change has happened.
     state <- reactiveValues(
         step=0L,
-        file=file,
         analyst=getUserName(),
-        ctd=ctd,
-        data=data,
-        ndata=length(data$pressure),
-        level=NULL,
-        usr=c(0, 1, 0, 1),
-        visible=rep(TRUE, length(data$pressure)) # all points visible at the start
-    )
+        file=NULL,         # set by observeEvent(input$fileSelect)
+        fileWithPath=NULL, # set by observeEvent(input$fileSelect)
+        ctd=NULL,          # set by observeEvent(input$fileSelect)
+        data=NULL,         # set by observeEvent(input$fileSelect)
+        ndata=NULL,        # set by observeEvent(input$fileSelect)
+        level=NULL,        # set by observeEvent(input$fileSelect)
+        scan=NULL,         # set by observeEvent(input$fileSelect)
+        yProfile=NULL,     # set by observeEvent(input$fileSelect)
+        ylabProfile=NULL,  # set by observeEvent(input$fileSelect)
+        visible=NULL,      # set by observeEvent(input$fileSelect)
+        usr=c(0, 1, 0, 1))
 
-    focusIsTagged <- function() {
-        !is.null(state$level) && (state$level %in% getTags(state$file, dbname=dbname, debug=debug-1)$level)
-    }
+    focusIsTagged <- function()
+        !is.null(state$level) && (state$level %in% getTags(state$fileWithPath, dbname=dbname, debug=debug-1)$level)
 
     focusTags <- function() {
         if (!is.null(state$level) && !is.null(state$file)) {
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             tags[tags$level==state$level, "tag"]
         }
     }
@@ -231,8 +218,9 @@ serverCtdtag <- function(input, output, session) {
 
     observeEvent(input$click,
         {
-            state$level  <- findNearestLevel(input$click$x, input$click$y, state$usr, state$data, input$view)
-            #dmsg(debug, "state$level =", state$level, "\n")
+            state$level <<- findNearestLevel(input$click$x, input$click$y, state$usr, state$data, input$view)
+            state$scan <<- state$data$scan[state$level]
+            dmsg(debug, "observeEvent(input$click) set state$level=", state$level, ", state$scan=", state$scan, "\n")
         })
 
     observeEvent(input$keypressTrigger,
@@ -245,7 +233,8 @@ serverCtdtag <- function(input, output, session) {
                 } else {
                     dmsg(debug, "responding to '", key, "' to tag the focus point\n")
                     if (state$visible[state$level]) {
-                        saveTag(file=state$file, level=state$level, tag=as.integer(key), analyst=state$analyst, dbname=dbname, debug=debug-1)
+                        saveTag(file=state$fileWithPath, level=state$level, scan=state$data$scan[state$level],
+                            tag=as.integer(key), analyst=state$analyst, dbname=dbname, debug=debug-1)
                         state$step <<- state$step + 1 # other shiny elements notice this
                     } else {
                         showNotification("No focus points in current view")
@@ -291,7 +280,7 @@ serverCtdtag <- function(input, output, session) {
             } else if (key == "x") {
                 dmsg(debug, "responding to 'x' to remove tag\n")
                 if (focusIsTagged()) {
-                    removeTag(file=state$file, level=state$level, dbname=dbname, debug=debug-1)
+                    removeTag(file=state$fileWithPath, level=state$level, dbname=dbname, debug=debug-1)
                     state$step <<- state$step + 1 # other shiny elements notice this
                 }
             } else if (key == "u") {
@@ -307,26 +296,71 @@ serverCtdtag <- function(input, output, session) {
     observeEvent(input$yProfile, {
         #dmsg(debug, "observed input$yProfile=\"", input$yProfile, "\"\n")
         if (input$yProfile == "pressure") {
-            state$data$yProfile <<- data$pressure
+            state$data$yProfile <<- state$data$pressure
             state$data$ylabProfile <<- resizableLabel("p")
         } else {
-            state$data$yProfile <<- data$sigma0
+            state$data$yProfile <<- state$data$sigma0
             state$data$ylabProfile <<- expression(sigma[0]* " ["* kg/m^3*"]")
         }
     })
 
+    output$fileSelect <- renderUI(
+        {
+            availableFiles <- list.files(path, paste0(suffix, "$"), ignore.case=TRUE)
+            selectInput("fileSelect", label=NULL,
+                choices=availableFiles,
+                selected=availableFiles[1])
+        })
+
+    observeEvent(input$fileSelect,
+        {
+            dmsg(debug, "observing input$fileSelect=\"", input$fileSelect, "\"\n")
+            state$file <<- input$fileSelect
+            state$fileWithPath <<- normalizePath(input$fileSelect)
+            ctd <- oce::read.oce(state$file)
+            state$ctd <<- ctd
+            pressure <- ctd[["pressure"]]
+            if (is.null(pressure))
+                stop("this ctd object does not contain pressure, so it cannot be analyzed")
+            scan <- ctd[["scan"]]
+            if (is.null(scan))
+                scan <- seq_along(pressure)
+            state$data <<- list(
+                longitude=ctd[["longitude"]][1],
+                latitude=ctd[["latitude"]][1],
+                scan=scan,
+                pressure=pressure,
+                salinity=ctd[["salinity"]],
+                temperature=ctd[["temperature"]],
+                CT=ctd[["CT"]],
+                SA=ctd[["SA"]],
+                sigma0=ctd[["sigma0"]],
+                spiciness0=ctd[["spiciness0"]])
+            ndata <- length(pressure)
+            state$ndata <<- ndata
+            state$visible <- rep(TRUE, ndata)
+            state$data$yProfile <<- pressure
+            state$data$ylabProfile <<- resizableLabel("p")
+            state$longitude <- ctd[["longitude"]][1]
+            state$latitude <- ctd[["latitude"]][1]
+        })
+
     output$levelMsg <- renderText(
         {
-            pvisible <- data$pressure[state$visible]
-            sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]", state$file, min(pvisible), max(pvisible))
+            pvisible <- state$data$pressure[state$visible]
+            if (any(is.finite(pvisible)))
+                sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]",
+                    state$file, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE))
+            else
+                ""
         })
 
     output$tagMsg <- renderText(
         {
             state$step # to cause shiny to update this
-            file <- state$file
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
-            tags <- tags[tags$file == file, ]
+            fileWithPath <- state$fileWithPath
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
+            tags <- tags[tags$file == fileWithPath, ]
             tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
             focusMsg <- if (focusIsTagged()) {
                 paste0(" (level ", state$level, " tagged: ",
@@ -363,7 +397,7 @@ serverCtdtag <- function(input, output, session) {
                     points(state$data$CT[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$CT[tags$level], state$data$yProfile[tags$level],
@@ -388,7 +422,7 @@ serverCtdtag <- function(input, output, session) {
                     points(state$data$SA[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$yProfile[tags$level],
@@ -414,7 +448,7 @@ serverCtdtag <- function(input, output, session) {
                     points(state$data$sigma0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$sigma0[tags$level], state$data$yProfile[tags$level],
@@ -440,7 +474,7 @@ serverCtdtag <- function(input, output, session) {
                     points(state$data$spiciness0[state$level], state$data$yProfile[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$spiciness0[tags$level], state$data$yProfile[tags$level],
@@ -457,12 +491,14 @@ serverCtdtag <- function(input, output, session) {
             x <- state$data$salinity[state$visible]
             y <- state$data$temperature[state$visible]
             p <- state$data$pressure[state$visible]
-            ctd <- as.ctd(x, y, p, longitude=data$longitude[1], latitude=data$latitude[1])
+            ctd <- as.ctd(x, y, p, longitude=state$longitude, latitude=state$latitude)
+            dmsg(debug, "constructed ctd for TS plot\n")
             # Plot empty with visible data, but then add the actual full data.
             # That way, we can see tagged points even if they are in the 4%
             # within-plot buffer zone.  (I am not using xaxs="i" etc because
             # it can put intrusions on the axis.)
             plotTS(ctd, eos=eos, type="n")
+            dmsg(debug, "completed TS plot\n")
             with(default$TS,
                 points(state$data$SA, state$data$CT, type=input$plotType,
                     cex=cex, col=col, lwd=lwd, pch=pch))
@@ -472,7 +508,7 @@ serverCtdtag <- function(input, output, session) {
                     points(state$data$SA[state$level], state$data$CT[state$level],
                         cex=cex, col=col, lwd=lwd, pch=pch))
             }
-            tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             if (length(tags$tag) > 0) {
                 with(default$tag,
                     points(state$data$SA[tags$level], state$data$CT[tags$level],
@@ -487,11 +523,12 @@ serverCtdtag <- function(input, output, session) {
 
     output$databasePanel <- renderUI({
         state$step # to cause shiny to update this
-        tags <- getTags(state$file, dbname=dbname, debug=debug-1)
+        tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
         if (!is.null(tags)) {
             o <- order(tags$level)
             tags <- tags[o, ]
             tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
+            tags$file <- NULL # user knows what file this is, from status line above plot
             DT::renderDT(tags)
         }
     })
@@ -511,11 +548,15 @@ serverCtdtag <- function(input, output, session) {
 #' tags (for the file undergoing analysis) are displayed on the plots,
 #' as a starting point.
 #'
-#' @param file character value naming a file to tag. NOTE: this
-#' argument might go away in the future, or at least become optional,
-#' if a directory-searching facility is added.
+#' @param path character value naming the directory in which to search
+#' for CTD files.
 #'
-#' @param prefix character value for the start of the name of the database file.
+#' @param suffix character value indicating the file suffix that
+#' is taken to indicate CTD files.  This is interpreted in a case-independent
+#' manner, so the default value of `"cnv"` would match both `"station1.cnv"`
+#' and `"STATION2.CNV"`.
+#'
+#' @param dbprefix character value for the start of the name of the database file.
 #'
 #' @param plotHeight numeric value for the height of the plot, in pixels.
 #'
@@ -524,9 +565,9 @@ serverCtdtag <- function(input, output, session) {
 #' @author Dan Kelley
 #'
 #' @export
-ctdtag <- function(file="d201211_0048.cnv", prefix="~/ctdtag", plotHeight=500, debug=0)
+ctdtag <- function(path=".", suffix="cnv", dbprefix="~/ctdtag", plotHeight=500, debug=0)
 {
-    shinyOptions(file=file, prefix=prefix, plotHeight=plotHeight, debug=debug)
+    shinyOptions(path=path, suffix=suffix, dbprefix=dbprefix, plotHeight=plotHeight, debug=debug)
     shinyApp(uiCtdtag, serverCtdtag)
 }
 

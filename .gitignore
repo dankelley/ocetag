@@ -2,3 +2,4 @@
 *swp
 *.pdf
 .Rproj.user
+.DS_Store

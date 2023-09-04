@@ -17,7 +17,7 @@ getUserName <- function()
 
 #' Get name of database
 #'
-#' @param prefix character value used as the start of the name.  The default
+#' @param dbprefix character value used as the start of the name.  The default
 #' value places the database in the user's top level.
 #'
 #' @return [getDatabaseName()] returns a character string holding the full
@@ -26,9 +26,9 @@ getUserName <- function()
 #' @author Dan Kelley
 #'
 #' @export
-getDatabaseName <- function(prefix="~/ocetag")
+getDatabaseName <- function(dbprefix="~/ocetag")
 {
-    path.expand(paste0(prefix, "_", getUserName(), ".db"))
+    path.expand(paste0(dbprefix, "_", getUserName(), ".db"))
 }
 
 #' Create a tagging of database
@@ -50,7 +50,7 @@ createDatabase <- function(dbname=getDatabaseName(), debug=0)
             c("version"="INTEGER"))
         RSQLite::dbWriteTable(con, "version", data.frame(version=1L), overwrite=TRUE)
         RSQLite::dbCreateTable(con, "tags",
-            c("file"="TEXT", level="INT", tag="INT", analyst="TEXT", analysisTime="TIMESTAMP"))
+            c("file"="TEXT", level="INT", scan="INT", tag="INT", analyst="TEXT", analysisTime="TIMESTAMP"))
         RSQLite::dbDisconnect(con)
     }
 }
@@ -120,7 +120,9 @@ removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
 #'
 #' @param file character value naming the CTD file.
 #'
-#' @param level integer specifying the sequence value of the data point that was tagged.
+#' @param level integer specifying the sequence value of the tagged data point.
+#'
+#' @param scan integer specifying the scan number of the tagged data point.
 #'
 #' @template tagTemplate
 #'
@@ -133,11 +135,13 @@ removeTag <- function(file=NULL, level=NULL, dbname=NULL, debug=0)
 #' @author Dan Kelley
 #'
 #' @export
-saveTag <- function(file=NULL, level=NULL, tag=NULL, analyst=NULL, dbname=NULL, debug=0)
+saveTag <- function(file=NULL, level=NULL, scan=NULL, tag=NULL, analyst=NULL, dbname=NULL, debug=0)
 {
     # no checking on NULL; add that if we want to generalize
-    dmsg(debug, "saveTag(..., level=", level, ", tag=", tag, ", ...)\n")
-    df <- data.frame(file=file, level=level, tag=tag, analyst=analyst, analysisTime=Sys.time())
+    dmsg(debug, "saveTag(..., level=", level, ", scan=", scan, ", tag=", tag, ", ...)\n")
+    df <- data.frame(file=file, level=level, scan=scan, tag=tag, analyst=analyst, analysisTime=Sys.time())
+    if (debug > 0)
+        print(df, file=stderr())
     con <- dbConnect(RSQLite::SQLite(), dbname)
     RSQLite::dbAppendTable(con, "tags", df)
     RSQLite::dbDisconnect(con)

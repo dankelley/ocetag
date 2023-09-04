@@ -7,6 +7,7 @@
 saveTag(
   file = NULL,
   level = NULL,
+  scan = NULL,
   tag = NULL,
   analyst = NULL,
   dbname = NULL,
@@ -16,7 +17,9 @@ saveTag(
 \arguments{
 \item{file}{character value naming the CTD file.}
 
-\item{level}{integer specifying the sequence value of the data point that was tagged.}
+\item{level}{integer specifying the sequence value of the tagged data point.}
+
+\item{scan}{integer specifying the scan number of the tagged data point.}
 
 \item{tag}{numerical value of the tag.}
 

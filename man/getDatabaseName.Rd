@@ -4,10 +4,10 @@
 \alias{getDatabaseName}
 \title{Get name of database}
 \usage{
-getDatabaseName(prefix = "~/ocetag")
+getDatabaseName(dbprefix = "~/ocetag")
 }
 \arguments{
-\item{prefix}{character value used as the start of the name.  The default
+\item{dbprefix}{character value used as the start of the name.  The default
 value places the database in the user's top level.}
 }
 \value{

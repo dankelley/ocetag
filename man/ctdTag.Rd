@@ -5,18 +5,23 @@
 \title{Run an Shiny App for Tagging CTD Features}
 \usage{
 ctdtag(
-  file = "d201211_0048.cnv",
-  prefix = "~/ctdtag",
+  path = ".",
+  suffix = "cnv",
+  dbprefix = "~/ctdtag",
   plotHeight = 500,
   debug = 0
 )
 }
 \arguments{
-\item{file}{character value naming a file to tag. NOTE: this
-argument might go away in the future, or at least become optional,
-if a directory-searching facility is added.}
+\item{path}{character value naming the directory in which to search
+for CTD files.}
 
-\item{prefix}{character value for the start of the name of the database file.}
+\item{suffix}{character value indicating the file suffix that
+is taken to indicate CTD files.  This is interpreted in a case-independent
+manner, so the default value of \code{"cnv"} would match both \code{"station1.cnv"}
+and \code{"STATION2.CNV"}.}
+
+\item{dbprefix}{character value for the start of the name of the database file.}
 
 \item{plotHeight}{numeric value for the height of the plot, in pixels.}
 
