@@ -126,7 +126,7 @@ default <- list(
 #'
 #' @importFrom utils head tail
 uiCtdtag <- fluidPage(
-    #headerPanel(title="", windowTitle=""),
+    tags$head(tags$style(HTML(".well {padding: 2px; min-height: 8px; margin: 2px;}"))),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style="background:#e6f3ff;cursor:crosshair;",
     wellPanel(
