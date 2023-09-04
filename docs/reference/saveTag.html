@@ -56,6 +56,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">saveTag</span><span class="op">(</span></span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  scan <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tag <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  analyst <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dbname <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -70,7 +71,11 @@
 
 
 <dt>level</dt>
-<dd><p>integer specifying the sequence value of the data point that was tagged.</p></dd>
+<dd><p>integer specifying the sequence value of the tagged data point.</p></dd>
+
+
+<dt>scan</dt>
+<dd><p>integer specifying the scan number of the tagged data point.</p></dd>
 
 
 <dt>tag</dt>

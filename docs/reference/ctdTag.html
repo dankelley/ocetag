@@ -60,8 +60,9 @@ analysts.  A SQLite database is used for this storage of tags.</p>
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ctdtag</span><span class="op">(</span></span>
-<span>  file <span class="op">=</span> <span class="st">"d201211_0048.cnv"</span>,</span>
-<span>  prefix <span class="op">=</span> <span class="st">"~/ctdtag"</span>,</span>
+<span>  path <span class="op">=</span> <span class="st">"."</span>,</span>
+<span>  suffix <span class="op">=</span> <span class="st">"cnv"</span>,</span>
+<span>  dbprefix <span class="op">=</span> <span class="st">"~/ctdtag"</span>,</span>
 <span>  plotHeight <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  debug <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -69,13 +70,19 @@ analysts.  A SQLite database is used for this storage of tags.</p>
 
     <div id="arguments">
     <h2>Arguments</h2>
-    <dl><dt>file</dt>
-<dd><p>character value naming a file to tag. NOTE: this
-argument might go away in the future, or at least become optional,
-if a directory-searching facility is added.</p></dd>
+    <dl><dt>path</dt>
+<dd><p>character value naming the directory in which to search
+for CTD files.</p></dd>
 
 
-<dt>prefix</dt>
+<dt>suffix</dt>
+<dd><p>character value indicating the file suffix that
+is taken to indicate CTD files.  This is interpreted in a case-independent
+manner, so the default value of <code>"cnv"</code> would match both <code>"station1.cnv"</code>
+and <code>"STATION2.CNV"</code>.</p></dd>
+
+
+<dt>dbprefix</dt>
 <dd><p>character value for the start of the name of the database file.</p></dd>
 
 
