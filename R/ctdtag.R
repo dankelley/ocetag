@@ -1,4 +1,10 @@
 # vim:textwidth=80:expandtab:shiftwidth=4:softtabstop=4
+
+# NOTES TO DEVELOPERS
+#
+# 1. If you add a new plot type, be sure to edit new code into
+#    the spots marked BOOKMARK 1, 2 and 3.
+
 eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
 requireNamespace("shiny")
@@ -43,6 +49,7 @@ findNearestLevel <- function(x, y, usr, data, view, debug=0)
     dmsg(debug, "findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
+    # start BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
     if (view == "T profile") {
         d2 <- (x - data$CT)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
@@ -61,6 +68,7 @@ findNearestLevel <- function(x, y, usr, data, view, debug=0)
     } else {
         stop("view=\"", view, "\" is not handled yet")
     }
+    # end BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
     dmsg(debug, "  returning ", nearest, "\n")
     nearest
 }
@@ -117,7 +125,7 @@ default <- list(
 #' @importFrom graphics axis box mtext par text
 #'
 #' @importFrom utils head tail
-ui <- fluidPage(
+uiCtdtag <- fluidPage(
     #headerPanel(title="", windowTitle=""),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style="background:#e6f3ff;cursor:crosshair;",
@@ -126,19 +134,23 @@ ui <- fluidPage(
             column(1, actionButton("help", "Help")),
             column(1, actionButton("quit", "Quit")),
             column(3, selectInput("view", label=NULL,
+                    # start BOOKMARK 2 OF 3 (show plot option in selection menu)
                     choices=c(
-                        "S profile"="S profile",
                         "T profile"="T profile",
-                        "spiciness profile",
-                        "sigma profile",
+                        "S profile"="S profile",
+                        "spiciness profile"="spiciness profile",
+                        "sigma profile"="sigma profile",
                         "TS"="TS"),
                     selected="T profile")),
             # FIXME: only show next for profile types
-            column(2, selectInput("yProfile", label=NULL,
-                    choices=c(
-                        "pressure"="pressure",
-                        "sigma"="sigma"),
-                    selected="pressure")),
+            conditionalPanel(
+                condition="input.view == 'T profile' || input.view == 'S profile' || input.view == 'spiciness profile' || input.view == 'sigma profile'",
+                column(2, selectInput("yProfile", label=NULL,
+                        choices=c(
+                            "pressure"="pressure",
+                            "sigma"="sigma"),
+                        selected="pressure"))),
+            # end BOOKMARK 2 OF 3 (show plot option in selection menu)
             column(2, selectInput("plotType", label=NULL,
                     choices=c("line"="l", "points"="p", "line+points"="o"),
                     selected="o")))),
@@ -155,7 +167,7 @@ ui <- fluidPage(
             column(12, uiOutput("databasePanel")))))
 
 #' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
-server <- function(input, output, session) {
+serverCtdtag <- function(input, output, session) {
     file <- normalizePath(shiny::getShinyOption("file"))
     debug <- shiny::getShinyOption("debug", default=0)
     prefix <- shiny::getShinyOption("prefix", default="~/ctdtag")
@@ -337,6 +349,7 @@ server <- function(input, output, session) {
     output$plot <- renderPlot({
         state$step # cause a shiny update
         input$yProfile # cause a shiny update
+        # start BOOKMARK 3 OF 3 (create a plot)
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$CT[state$visible]
@@ -469,7 +482,7 @@ server <- function(input, output, session) {
             plot(0:1, 0:1, xlab="", ylab="", axes=FALSE, type="n")
             text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
         }
-    #}, height=500, pointsize=14)
+        # end BOOKMARK 3 OF 3 (create a plot)
     }, pointsize=14)
 
     output$databasePanel <- renderUI({
@@ -514,6 +527,6 @@ server <- function(input, output, session) {
 ctdtag <- function(file="d201211_0048.cnv", prefix="~/ctdtag", plotHeight=500, debug=0)
 {
     shinyOptions(file=file, prefix=prefix, plotHeight=plotHeight, debug=debug)
-    shinyApp(ui, server)
+    shinyApp(uiCtdtag, serverCtdtag)
 }
 
