@@ -134,7 +134,7 @@ uiCtdtag <- fluidPage(
             column(3, uiOutput("fileSelect")),
             column(1, actionButton("help", "Help")),
             column(1, actionButton("quit", "Quit")),
-            column(3, selectInput("view", label=NULL,
+            column(2, selectInput("view", label=NULL,
                     # start BOOKMARK 2 OF 3 (show plot option in selection menu)
                     choices=c(
                         "T profile"="T profile",
@@ -163,7 +163,7 @@ uiCtdtag <- fluidPage(
         fluidRow(
             uiOutput("plotPanel"))),
     wellPanel(
-        p("Tags in Database"),
+        uiOutput("databaseTitle"),
         fluidRow(
             column(12, uiOutput("databasePanel")))))
 
@@ -348,11 +348,18 @@ serverCtdtag <- function(input, output, session) {
     output$levelMsg <- renderText(
         {
             pvisible <- state$data$pressure[state$visible]
-            if (any(is.finite(pvisible)))
-                sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]",
-                    state$file, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE))
-            else
+            if (any(is.finite(pvisible))) {
+                if (is.null(state$level)) {
+                    sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]",
+                        state$fileWithPath, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE))
+                } else {
+                    sprintf("CTD file \"%s\" [%.1f dbar to %.1f dbar shown; focus (cross) at %.1f dbar]",
+                        state$fileWithPath, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE),
+                        state$data$pressure[state$level])
+                }
+            } else {
                 ""
+            }
         })
 
     output$tagMsg <- renderText(
@@ -370,6 +377,11 @@ serverCtdtag <- function(input, output, session) {
             }
             paste0("Database \"", dbname, "\" ", tagMsg, " ", focusMsg)
         })
+
+    output$databaseTitle <- renderText({
+        if (!is.null(state$fileWithPath))
+            paste0("Tags for CTD file \"", state$fileWithPath, "\"")
+    })
 
     output$plotPanel <- renderUI({
         state$step # cause a shiny update
@@ -523,13 +535,17 @@ serverCtdtag <- function(input, output, session) {
 
     output$databasePanel <- renderUI({
         state$step # to cause shiny to update this
-        tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
-        if (!is.null(tags)) {
-            o <- order(tags$level)
-            tags <- tags[o, ]
-            tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
-            tags$file <- NULL # user knows what file this is, from status line above plot
-            DT::renderDT(tags)
+        if (!is.null(state$fileWithPath)) {
+            # Show file, pressure, tag, analyst, and analysis time
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
+            focus <- tags$file == state$fileWithPath
+            tags <- tags[focus, ]
+            if (!is.null(tags)) {
+                tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
+                tags$pressure <- state$data$pressure[tags$level]
+                tags <- tags[order(tags$pressure),]
+                DT::renderDT(tags[,c("pressure", "tag", "analyst", "analysisTime")], rownames=FALSE)
+            }
         }
     })
 }
