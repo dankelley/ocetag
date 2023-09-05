@@ -139,7 +139,7 @@ saveTag <- function(file=NULL, level=NULL, scan=NULL, tag=NULL, analyst=NULL, db
 {
     # no checking on NULL; add that if we want to generalize
     dmsg(debug, "saveTag(..., level=", level, ", scan=", scan, ", tag=", tag, ", ...)\n")
-    df <- data.frame(file=file, level=level, scan=scan, tag=tag, analyst=analyst, analysisTime=Sys.time())
+    df <- data.frame(file=file, level=level, scan=scan, tag=tag, analyst=analyst, analysisTime=round(Sys.time()))
     if (debug > 0)
         print(df, file=stderr())
     con <- dbConnect(RSQLite::SQLite(), dbname)

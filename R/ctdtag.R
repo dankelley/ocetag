@@ -213,7 +213,7 @@ serverCtdtag <- function(input, output, session) {
 
     observeEvent(input$quit,
         {
-            stopApp()
+            stopApp(invisible(""))
         })
 
     observeEvent(input$click,
@@ -307,14 +307,17 @@ serverCtdtag <- function(input, output, session) {
     output$fileSelect <- renderUI(
         {
             availableFiles <- list.files(path, paste0(suffix, "$"), ignore.case=TRUE)
-            selectInput("fileSelect", label=NULL,
-                choices=availableFiles,
-                selected=availableFiles[1])
+            selectInput("fileSelect", label=NULL, choices=availableFiles, selected=availableFiles[1])
         })
 
     observeEvent(input$fileSelect,
         {
             dmsg(debug, "observing input$fileSelect=\"", input$fileSelect, "\"\n")
+            if (nchar(input$fileSelect) == 0L) {
+                msg <- paste0("Directory \"", path, "\" has no files with names ending with \"", suffix, "\"\n")
+                stopApp()
+                stop(msg)
+            }
             state$file <<- input$fileSelect
             state$fileWithPath <<- normalizePath(input$fileSelect)
             ctd <- oce::read.oce(state$file)
@@ -347,19 +350,25 @@ serverCtdtag <- function(input, output, session) {
 
     output$levelMsg <- renderText(
         {
+            state$step # to cause shiny to update this
             pvisible <- state$data$pressure[state$visible]
+            msg <- ""
             if (any(is.finite(pvisible))) {
-                if (is.null(state$level)) {
-                    sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]",
-                        state$fileWithPath, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE))
-                } else {
-                    sprintf("CTD file \"%s\" [%.1f dbar to %.1f dbar shown; focus (cross) at %.1f dbar]",
-                        state$fileWithPath, min(pvisible, na.rm=TRUE), max(pvisible, na.rm=TRUE),
-                        state$data$pressure[state$level])
+                top <- min(pvisible, na.rm=TRUE)
+                bot <- max(pvisible, na.rm=TRUE)
+                msg <- sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]", state$fileWithPath, top, bot)
+                if (!is.null(state$level)) {
+                    p <- state$data$pressure[state$level]
+                    if (focusIsTagged()) {
+                        msg <- paste(msg,
+                            sprintf("(focus at %.1f dbar is tagged %s)", p, paste(focusTags(), collapse="&")))
+                    } else {
+                        msg <- paste(msg,
+                            sprintf("(focus at %.1f dbar)", p))
+                    }
                 }
-            } else {
-                ""
             }
+            msg
         })
 
     output$tagMsg <- renderText(
@@ -369,13 +378,13 @@ serverCtdtag <- function(input, output, session) {
             tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             tags <- tags[tags$file == fileWithPath, ]
             tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
-            focusMsg <- if (focusIsTagged()) {
-                paste0(" (level ", state$level, " tagged: ",
-                    paste(focusTags(), collapse=" & "), ")")
-            } else {
-                ""
-            }
-            paste0("Database \"", dbname, "\" ", tagMsg, " ", focusMsg)
+            #focusMsg <- if (focusIsTagged()) {
+            #    paste0(" (level ", state$level, " tagged: ",
+            #        paste(focusTags(), collapse=" & "), ")")
+            #} else {
+            #    ""
+            #}
+            paste0("Database \"", dbname, "\" ", tagMsg)#, " ", focusMsg)
         })
 
     output$databaseTitle <- renderText({
@@ -398,6 +407,7 @@ serverCtdtag <- function(input, output, session) {
         # start BOOKMARK 3 OF 3 (create a plot)
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
+            #cat("names in data: ", paste(names(state$data), collapse=","), "\n", file=stderr())
             x <- state$data$CT[state$visible]
             y <- state$data$yProfile[state$visible]
             with(default$Tprofile,
