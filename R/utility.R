@@ -45,9 +45,10 @@ getUserName <- function()
 #' @export
 pluralize <- function(n=1, singular="item", plural=NULL)
 {
-    singular <- paste(n, singular)
-    if (is.null(plural))
-        plural <- paste0(singular, "s")
-    if (n == 1L) singular else plural
+    if (n == 1L) {
+        paste(n, singular)
+    } else {
+        if (is.null(plural)) paste(n, paste0(singular, "s")) else paste(n, plural)
+    }
 }
 
