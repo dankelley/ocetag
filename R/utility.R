@@ -51,4 +51,3 @@ pluralize <- function(n=1, singular="item", plural=NULL)
     if (n == 1L) singular else plural
 }
 
-

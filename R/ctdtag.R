@@ -83,8 +83,11 @@ limitsTrim <- function(limits, ndata)
 
 limitsToVisible <- function(limits, ndata)
 {
-    #limits[1] <- max(1L, as.integer(limits[1]))
-    #limits[2] <- min(ndata, as.integer(limits[2]))
+    if (2 != length(limits))
+        stop("limits must be of length 2")
+    limits <- as.integer(limits)
+    limits[1] <- max(1L, limits[1])
+    limits[2] <- min(ndata, limits[2])
     visible <- rep(FALSE, ndata)
     visible[seq(limits[1], limits[2])] <- TRUE
     visible
@@ -143,7 +146,6 @@ uiCtdtag <- fluidPage(
                         "sigma profile"="sigma profile",
                         "TS"="TS"),
                     selected="T profile")),
-            # FIXME: only show next for profile types
             conditionalPanel(
                 condition="input.view == 'T profile' || input.view == 'S profile' || input.view == 'spiciness profile' || input.view == 'sigma profile'",
                 column(2, selectInput("yProfile", label=NULL,
@@ -294,7 +296,7 @@ serverCtdtag <- function(input, output, session) {
         })
 
     observeEvent(input$yProfile, {
-        #dmsg(debug, "observed input$yProfile=\"", input$yProfile, "\"\n")
+        dmsg(debug, "observing input$yProfile=\"", input$yProfile, "\"\n")
         if (input$yProfile == "pressure") {
             state$data$yProfile <<- state$data$pressure
             state$data$ylabProfile <<- resizableLabel("p")
@@ -378,12 +380,6 @@ serverCtdtag <- function(input, output, session) {
             tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
             tags <- tags[tags$file == fileWithPath, ]
             tagMsg <- paste0("[", pluralize(length(tags$tag), "tag"), "]")
-            #focusMsg <- if (focusIsTagged()) {
-            #    paste0(" (level ", state$level, " tagged: ",
-            #        paste(focusTags(), collapse=" & "), ")")
-            #} else {
-            #    ""
-            #}
             paste0("Database \"", dbname, "\" ", tagMsg)#, " ", focusMsg)
         })
 
@@ -407,7 +403,6 @@ serverCtdtag <- function(input, output, session) {
         # start BOOKMARK 3 OF 3 (create a plot)
         if (input$view == "T profile") {
             par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
-            #cat("names in data: ", paste(names(state$data), collapse=","), "\n", file=stderr())
             x <- state$data$CT[state$visible]
             y <- state$data$yProfile[state$visible]
             with(default$Tprofile,
