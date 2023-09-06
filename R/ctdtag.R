@@ -62,11 +62,14 @@ findNearestLevel <- function(x, y, usr, data, view, debug=0)
      } else if (view == "spiciness profile") {
         d2 <- (x - data$spiciness0)^2/dx2 + (y - data$yProfile)^2/dy2
         nearest <- which.min(d2)
+    } else if (view == "scan profile") {
+        d2 <- (x - data$scan)^2/dx2 + (y - data$yProfile)^2/dy2
+        nearest <- which.min(d2)
      } else if (view == "TS") {
         d2 <- (x - data$SA)^2/dx2 + (y - data$CT)^2/dy2
         nearest <- which.min(d2)
     } else {
-        stop("view=\"", view, "\" is not handled yet")
+        stop("view=\"", view, "\" is not handled yet (internal error -- please report)")
     }
     # end BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
     dmsg(debug, "  returning ", nearest, "\n")
@@ -144,6 +147,7 @@ uiCtdtag <- fluidPage(
                         "S profile"="S profile",
                         "spiciness profile"="spiciness profile",
                         "sigma profile"="sigma profile",
+                        "scan profile"="scan profile",
                         "TS"="TS"),
                     selected="T profile")),
             conditionalPanel(
@@ -407,7 +411,7 @@ serverCtdtag <- function(input, output, session) {
             y <- state$data$yProfile[state$visible]
             with(default$Tprofile,
                 plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
-                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
+                    axes=FALSE, yaxs="r", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
@@ -432,7 +436,7 @@ serverCtdtag <- function(input, output, session) {
             y <- state$data$yProfile[state$visible]
             with(default$Sprofile,
                 plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
-                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
+                    axes=FALSE, yaxs="r", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 with(default$focus,
@@ -457,7 +461,7 @@ serverCtdtag <- function(input, output, session) {
             y <- state$data$yProfile[state$visible]
             with(default$sigmaprofile,
                 plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
-                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
+                    axes=FALSE, yaxs="r", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 dmsg(debug, "sigma profile... ", vectorShow(state$level))
@@ -483,7 +487,7 @@ serverCtdtag <- function(input, output, session) {
             y <- state$data$yProfile[state$visible]
             with(default$spicinessprofile,
                 plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
-                    axes=FALSE, yaxs="i", cex=cex, col=col, lwd=lwd, pch=pch))
+                    axes=FALSE, yaxs="r", cex=cex, col=col, lwd=lwd, pch=pch))
             state$usr <<- par("usr")
             if (!is.null(state$level)) {
                 dmsg(debug, "spiciness profile... ", vectorShow(state$level))
@@ -503,6 +507,31 @@ serverCtdtag <- function(input, output, session) {
             mtext(resizableLabel("spiciness0"), side=3, line=1.5)
             box()
 
+        } else if (input$view == "scan profile") {
+            par(mar=c(1, 3.3, 3, 1), mgp=c(1.9, 0.5, 0))
+            x <- state$data$scan[state$visible]
+            y <- state$data$yProfile[state$visible]
+            with(default$Tprofile,
+                plot(x, y, ylim=rev(range(y)), xlab="", ylab="", type=input$plotType,
+                    axes=FALSE, yaxs="r", cex=cex, col=col, lwd=lwd, pch=pch))
+            state$usr <<- par("usr")
+            if (!is.null(state$level)) {
+                with(default$focus,
+                    points(state$data$scan[state$level], state$data$yProfile[state$level],
+                        cex=cex, col=col, lwd=lwd, pch=pch))
+            }
+            tags <- getTags(state$fileWithPath, dbname=dbname, debug=debug-1)
+            if (length(tags$tag) > 0) {
+                with(default$tag,
+                    points(state$data$scan[tags$level], state$data$yProfile[tags$level],
+                        cex=cex, pch=pch, lwd=lwd, col=1+tags$tag))
+            }
+            axis(side=2)
+            axis(side=3)
+            mtext(state$data$ylab, side=2, line=1.5)
+            mtext("Scan", side=3, line=1.5)
+            box()
+ 
         } else if (input$view == "TS") {
             par(mar=c(1, 3, 3, 1), mgp=c(1.9, 0.5, 0))
             x <- state$data$salinity[state$visible]
