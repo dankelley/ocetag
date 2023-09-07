@@ -2,19 +2,26 @@
 % Please edit documentation in R/database.R
 \name{createDatabase}
 \alias{createDatabase}
-\title{Create a tagging of database}
+\title{Create a Database for Tagging}
 \usage{
-createDatabase(dbname = getDatabaseName(), debug = 0)
+createDatabase(dbname = getDatabaseName(), mapping = list(), debug = 0)
 }
 \arguments{
 \item{dbname}{character value naming the database.}
+
+\item{mapping}{an optional list value that specifies a mapping from numerical tag
+codes to textual descriptions.  For example, this might be something
+like \code{list("MLD"=1)} in an analysis focussed on finding the mixed-layer
+depth in a series of CTD profiles. The mapping is stored in the database
+as a table named \code{tagMapping}, and this information is displayed by
+\code{\link[=ctdtag]{ctdtag()}}, below the plot.}
 
 \item{debug}{integer value indicating a debugging level.  Use 0 for silent
 operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \description{
-Create a tagging of database
+Create a Database for Tagging
 }
 \author{
 Dan Kelley

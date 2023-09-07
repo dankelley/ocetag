@@ -169,7 +169,7 @@ uiCtdtag <- fluidPage(
         fluidRow(
             uiOutput("plotPanel"))),
     wellPanel(
-        uiOutput("databaseTitle"),
+        uiOutput("databaseHeader"),
         fluidRow(
             column(12, uiOutput("databasePanel")))))
 
@@ -178,11 +178,12 @@ serverCtdtag <- function(input, output, session) {
     path <- shiny::getShinyOption("path", default=".")
     suffix <- shiny::getShinyOption("suffix", default=".cnv")
     dbprefix <- shiny::getShinyOption("dbprefix", default="~/ctdtag")
+    mapping <- shiny::getShinyOption("mapping", default=list())
     plotHeight <- shiny::getShinyOption("plotHeight", default=200)
     debug <- shiny::getShinyOption("debug", default=0)
+    # set up database
     dbname <- getDatabaseName(dbprefix=dbprefix)
-    createDatabase(dbname=dbname, debug=debug-1)
-
+    createDatabase(dbname=dbname, mapping=mapping, debug=debug-1)
     # 'state', being reactive, creates a gateway between R and the webserver
     # that displays the app. Note that 'step' is used when one R element needs
     # to tell other elements that a change has happened.
@@ -346,6 +347,7 @@ serverCtdtag <- function(input, output, session) {
                 sigma0=ctd[["sigma0"]],
                 spiciness0=ctd[["spiciness0"]])
             ndata <- length(pressure)
+            state$level <- NULL # remove focus point
             state$ndata <<- ndata
             state$visible <- rep(TRUE, ndata)
             state$data$yProfile <<- pressure
@@ -387,9 +389,21 @@ serverCtdtag <- function(input, output, session) {
             paste0("Database \"", dbname, "\" ", tagMsg)#, " ", focusMsg)
         })
 
-    output$databaseTitle <- renderText({
-        if (!is.null(state$fileWithPath))
-            paste0("Tags for CTD file \"", state$fileWithPath, "\"")
+    output$databaseHeader <- renderText({
+        if (!is.null(state$fileWithPath)) {
+            tm <- getTagMapping(dbname=dbname, debug=debug-1L)
+            msg <- "<p>"
+            if (!is.null(tm) && nrow(tm) > 0L) {
+                msg <- paste0(msg, "Tags and their meanings: ")
+                ntm <- nrow(tm)
+                for (i in seq_len(ntm))
+                    msg <- paste0(msg, tm[i, "value"], "=\"", tm[i, "meaning"],
+                        if (i < ntm) "\"; " else "\"", sep="")
+                msg <- paste0(msg, "</p>")
+            }
+            msg <- paste0(msg, paste0("Tags for CTD file \"", state$fileWithPath, "\""), "</p>")
+            msg
+        }
     })
 
     output$plotPanel <- renderUI({
@@ -601,6 +615,16 @@ serverCtdtag <- function(input, output, session) {
 #' @param path character value naming the directory in which to search
 #' for CTD files.
 #'
+#' @param mapping a list that connects numerical tag codes to character values
+#' indicating their meaning.  For example, `list("mixed-layer depth"=0)`
+#' might be used in a study of mixed-layer depths.  By default, mappings
+#' get set in a simple way, with numerical value 0 mapping to string `"0"`,
+#' etc. The value of `mapping` is *only* used in creating a new database.  After that, its
+#' value will be ignored if supplied, to avoid the confusion that would arise
+#' with multiple intended mappings.  The mapping is
+#' stored in the database as a table named `tagMapping`, the contents of
+#' which are displayed in the table that appears below the plot.
+#'
 #' @param suffix character value indicating the file suffix that
 #' is taken to indicate CTD files.  This is interpreted in a case-independent
 #' manner, so the default value of `"cnv"` would match both `"station1.cnv"`
@@ -615,9 +639,9 @@ serverCtdtag <- function(input, output, session) {
 #' @author Dan Kelley
 #'
 #' @export
-ctdtag <- function(path=".", suffix="cnv", dbprefix="~/ctdtag", plotHeight=500, debug=0)
+ctdtag <- function(path=".", suffix="cnv", dbprefix="~/ctdtag", mapping=list(), plotHeight=500, debug=0)
 {
-    shinyOptions(path=path, suffix=suffix, dbprefix=dbprefix, plotHeight=plotHeight, debug=debug)
+    shinyOptions(path=path, suffix=suffix, dbprefix=dbprefix, mapping=mapping, plotHeight=plotHeight, debug=debug)
     shinyApp(uiCtdtag, serverCtdtag)
 }
 

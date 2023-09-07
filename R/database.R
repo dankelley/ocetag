@@ -31,9 +31,21 @@ getDatabaseName <- function(dbprefix="~/ocetag")
     path.expand(paste0(dbprefix, "_", getUserName(), ".db"))
 }
 
-#' Create a tagging of database
+#' Create a Database for Tagging
 #'
+# This is a utility function, used by [ctdTag()] to set up a database
+# to hold tags established by clicking on CTD plots. If a database
+# of the provided name already exists, it is not altered, and [createDatabase()]
+# returns without altering it.
+#
 #' @template dbnameTemplate
+#'
+#' @param mapping an optional list value that specifies a mapping from numerical tag
+#' codes to textual descriptions.  For example, this might be something
+#' like `list("MLD"=1)` in an analysis focussed on finding the mixed-layer
+#' depth in a series of CTD profiles. The mapping is stored in the database
+#' as a table named `tagMapping`, and this information is displayed by
+#' [ctdtag()], below the plot.
 #'
 #' @template debugTemplate
 #'
@@ -41,21 +53,78 @@ getDatabaseName <- function(dbprefix="~/ocetag")
 #'
 #' @importFrom RSQLite dbConnect dbCreateTable dbDisconnect dbReadTable dbWriteTable SQLite 
 #' @export
-createDatabase <- function(dbname=getDatabaseName(), debug=0)
+createDatabase <- function(dbname=getDatabaseName(), mapping=list(), debug=0)
 {
     if (!file.exists(dbname)) {
         dmsg(debug, "creating '", dbname, "'\n")
+        if (!(is.character(dbname) && nchar(dbname) > 0L))
+            stop("dbname must be a non-empty character value")
+        if (!is.list(mapping))
+            stop("'mapping' must be a list")
         con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
-        RSQLite::dbCreateTable(con, "version",
-            c("version"="INTEGER"))
+        # Version table
+        RSQLite::dbCreateTable(con, "version", c("version"="INTEGER"))
         RSQLite::dbWriteTable(con, "version", data.frame(version=1L), overwrite=TRUE)
+        # Mapping table (start with default)
+        tagMapping <- data.frame(value=0:9, meaning=as.character(0:9))
+        #cat("initial tagMapping...\n");print(tagMapping)
+        tagValue <- as.integer(mapping)
+        tagMeaning <- names(mapping)
+        #cat("tagValue: ", paste(tagValue, collapse=";"), "\n")
+        #cat("tagMeaning: ", paste(tagMeaning, collapse=";"), "\n")
+        for (i in seq_along(tagValue)) {
+            value <- tagValue[i]
+            meaning <- tagMeaning[i]
+            #message("i=", i)
+            if (tagValue < 0L || tagValue > 9L)
+                stop("tag mapping code must be in range 1 to 9, but value ", i, " is ", tagValue)
+            tagMapping[tagMapping$value==tagValue[i], "meaning"] <- tagMeaning
+            #message(" ... ok")
+        }
+        #cat("final tagMapping...\n");print(tagMapping)
+        RSQLite::dbCreateTable(con, "tagMapping", c(value="INT", meaning="TEXT"))
+        RSQLite::dbWriteTable(con, "tagMapping", tagMapping, overwrite=TRUE)
+        # Tag table
         RSQLite::dbCreateTable(con, "tags",
             c("file"="TEXT", level="INT", scan="INT", tag="INT", analyst="TEXT", analysisTime="TIMESTAMP"))
         RSQLite::dbDisconnect(con)
     }
 }
 
-#' Get tags from the database
+#' Get Mapping of Tag Value to Tag Meaning
+#'
+#' A utility function, used by [ctdtag()] to get textual descriptions
+#' of the meanings of the numerical tags.
+#'
+#' @template dbnameTemplate
+#'
+#' @template debugTemplate
+#'
+#' @return [getTagMapping()] returns a data frame of tag value:meaning pairss.
+#'
+#' @author Dan Kelley
+#'
+#' @export
+getTagMapping <- function(dbname=getDatabaseName(), debug=0)
+{
+    dmsg(debug, "getTagMapping(file=\"", file, "\", dbname=\"", dbname, "\"\n")
+    rval <- NULL
+    if (file.exists(dbname)) {
+        con <- dbConnect(RSQLite::SQLite(), dbname)
+        if (RSQLite::dbExistsTable(con, "tagMapping")) {
+            rval <- RSQLite::dbReadTable(con, "tagMapping")
+        }
+        RSQLite::dbDisconnect(con)
+    }
+    #>msg <- "Codes and their meanings: "
+    #>for (i in seq_len(nrow(rval))) {
+    #>    msg <- c(msg, rval[i, "value"], "=\"", rval[i, "meaning"], "\"; ", sep="")
+    #> }
+    #>message(msg)
+    rval
+} # getTagMapping()
+
+#' Get Tag Mapping from the Database
 #'
 #' @param file character value naming the CTD file.  Only items relating
 #' to this file are returned.
@@ -64,7 +133,8 @@ createDatabase <- function(dbname=getDatabaseName(), debug=0)
 #'
 #' @template debugTemplate
 #'
-#' @return [getTags()] returns a vector of tag values.
+#' @return [getTagMapping()] returns a data frame holding the `code` and
+#' `meaning` of each possible tag.
 #'
 #' @author Dan Kelley
 #'
@@ -85,6 +155,7 @@ getTags <- function(file=NULL, dbname=getDatabaseName(), debug=0)
     }
     tags
 }
+
 
 #' Remove a tag
 #'

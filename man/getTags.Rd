@@ -2,7 +2,7 @@
 % Please edit documentation in R/database.R
 \name{getTags}
 \alias{getTags}
-\title{Get tags from the database}
+\title{Get Tag Mapping from the Database}
 \usage{
 getTags(file = NULL, dbname = getDatabaseName(), debug = 0)
 }
@@ -17,10 +17,11 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \value{
-\code{\link[=getTags]{getTags()}} returns a vector of tag values.
+\code{\link[=getTagMapping]{getTagMapping()}} returns a data frame holding the \code{code} and
+\code{meaning} of each possible tag.
 }
 \description{
-Get tags from the database
+Get Tag Mapping from the Database
 }
 \author{
 Dan Kelley

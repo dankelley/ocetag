@@ -8,6 +8,7 @@ ctdtag(
   path = ".",
   suffix = "cnv",
   dbprefix = "~/ctdtag",
+  mapping = list(),
   plotHeight = 500,
   debug = 0
 )
@@ -22,6 +23,16 @@ manner, so the default value of \code{"cnv"} would match both \code{"station1.cn
 and \code{"STATION2.CNV"}.}
 
 \item{dbprefix}{character value for the start of the name of the database file.}
+
+\item{mapping}{a list that connects numerical tag codes to character values
+indicating their meaning.  For example, \code{list("mixed-layer depth"=0)}
+might be used in a study of mixed-layer depths.  By default, mappings
+get set in a simple way, with numerical value 0 mapping to string \code{"0"},
+etc. The value of \code{mapping} is \emph{only} used in creating a new database.  After that, its
+value will be ignored if supplied, to avoid the confusion that would arise
+with multiple intended mappings.  The mapping is
+stored in the database as a table named \code{tagMapping}, the contents of
+which are displayed in the table that appears below the plot.}
 
 \item{plotHeight}{numeric value for the height of the plot, in pixels.}
 
