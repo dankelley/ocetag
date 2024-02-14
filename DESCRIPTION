@@ -15,7 +15,7 @@ License: GPL (>= 3)
 Encoding: UTF-8
 BugReports: https://github.com/dankelley/ocetag/issues
 URL: https://dankelley.github.io/ocetag/
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Roxygen: list(markdown = TRUE)
 BuildVignettes: true
 VignetteBuilder: knitr
