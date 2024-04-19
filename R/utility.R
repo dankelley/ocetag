@@ -1,3 +1,17 @@
+#' Get user name
+#'
+#' @return [getUserName()] returns a character value naming the user, i.e.
+#' holding the user's login name.
+#'
+#' @author Dan Kelley
+#'
+#' @export
+getUserName <- function() {
+    # FIXME: maybe use Sys.info()[["user"]] ???
+    res <- if (.Platform$OS.type == "windows") Sys.getenv("USERNAME") else Sys.getenv("USER")
+    if (is.null(res) || 0L == nchar(res)) "unknown" else res
+}
+
 #' Optionally print a debugging message
 #'
 #' @param debug integer value indicating whether to print the message. If this
@@ -9,8 +23,9 @@
 #' @author Dan Kelley
 #'
 #' @export
-dmsg <- function(debug, ...)
-    if (debug > 0) cat(file=stderr(), ..., sep="")
+dmsg <- function(debug, ...) {
+    if (debug > 0) cat(file = stderr(), ..., sep = "")
+}
 
 #' Get user name
 #'
@@ -20,8 +35,7 @@ dmsg <- function(debug, ...)
 #' @author Dan Kelley
 #'
 #' @export
-getUserName <- function()
-{
+getUserName <- function() {
     # FIXME: maybe use Sys.info()[["user"]] ???
     res <- if (.Platform$OS.type == "windows") Sys.getenv("USERNAME") else Sys.getenv("USER")
     if (is.null(res) || 0L == nchar(res)) "unknown" else res
@@ -43,12 +57,10 @@ getUserName <- function()
 #' @author Dan Kelley
 #'
 #' @export
-pluralize <- function(n=1, singular="item", plural=NULL)
-{
+pluralize <- function(n = 1, singular = "item", plural = NULL) {
     if (n == 1L) {
         paste(n, singular)
     } else {
         if (is.null(plural)) paste(n, paste0(singular, "s")) else paste(n, plural)
     }
 }
-

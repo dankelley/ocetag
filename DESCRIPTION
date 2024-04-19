@@ -1,6 +1,6 @@
 Package: ocetag
-Title: Tag Features on Oceanographic Plots
-Version: 0.0.1
+Title: Tag Features on Oceanographic Datasets
+Version: 0.0.2
 Authors@R: c(person(
             given="Dan",
             family="Kelley",
@@ -8,8 +8,8 @@ Authors@R: c(person(
             role=c("aut", "cre"),
             comment=c(ORCID="0000-0001-7808-5911")))
 Maintainer: Dan Kelley <dan.kelley@dal.ca>
-Description: A shiny app for tagging features in oceanographic diagrams.
-Depends: R (>= 3.5.0), shiny, oce (>= 1.8-1), DT, RSQLite
+Description: Tools for tagging features in oceanographic datasets.
+Depends: R (>= 3.5.0), shiny, oce (>= 1.8-1), RSQLite
 Suggests: knitr, rmarkdown, testthat
 License: GPL (>= 3)
 Encoding: UTF-8
