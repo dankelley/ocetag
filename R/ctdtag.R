@@ -686,7 +686,7 @@ serverCtdtag <- function(input, output, session) {
     })
 }
 
-#' Run an Shiny App for Tagging CTD Features
+#' Shiny App for Tagging CTD Features
 #'
 #' The tags are stored in a SQLite database, for ease of processing in R or other
 #' software systems.  The analyst's name and the time of analysis is stored along

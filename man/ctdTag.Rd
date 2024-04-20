@@ -2,7 +2,7 @@
 % Please edit documentation in R/ctdtag.R
 \name{ctdtag}
 \alias{ctdtag}
-\title{Run an Shiny App for Tagging CTD Features}
+\title{Shiny App for Tagging CTD Features}
 \usage{
 ctdtag(
   path = ".",
