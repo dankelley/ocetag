@@ -82,9 +82,9 @@ mapping from textual descriptions to numerical codes; see
 <dd><p>an optional named vector (or a list) that specifies additional column names and
 types for the tag table.  The default set is
 <code>list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")</code>
-which is likely to be suitable for CTD data, with tags referenced to the depth
-at the stated index (starting with index 1, at the surface).
-See ‘Example’ for how pressure may be added.</p></dd>
+which is likely to be suitable for CTD data, with tags referenced
+to the depth at the stated index (starting with index 1, at the
+surface). See ‘Example’ for how pressure may be added.</p></dd>
 
 
 <dt>debug</dt>
@@ -93,6 +93,16 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.</p></dd>
 
 </dl></div>
+    <div id="history-of-changes">
+    <h2>History of Changes</h2>
+    
+
+<ul><li><p>On 2024-04-20, the database switched from storing <code>level</code> to
+storing <code>index</code>, which is a more neutral and inclusive term
+that might make more sense as we move from CTD datasets to other
+datasets.  This change can be recognized by the <code>version</code> value
+in the database, which changed fro 1 to 2 on this date.</p></li>
+</ul></div>
     <div id="author">
     <h2>Author</h2>
     <p>Dan Kelley</p>

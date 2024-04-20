@@ -13,9 +13,9 @@
 #' @param tags an optional named vector (or a list) that specifies additional column names and
 #' types for the tag table.  The default set is
 #' `list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")`
-#' which is likely to be suitable for CTD data, with tags referenced to the depth
-#' at the stated index (starting with index 1, at the surface).
-#' See \sQuote{Example} for how pressure may be added.
+#' which is likely to be suitable for CTD data, with tags referenced
+#' to the depth at the stated index (starting with index 1, at the
+#' surface). See \sQuote{Example} for how pressure may be added.
 #'
 #' @template debugTemplate
 #'
@@ -32,6 +32,14 @@
 #' # Finally, create the database.
 #' createDatabase(dbname, mapping = mapping, tags = tags)
 #' unlink(dbname) # do not do this in practice
+#'
+#' @section History of Changes:
+#'
+#' * On 2024-04-20, the database switched from storing `level` to
+#' storing `index`, which is a more neutral and inclusive term
+#' that might make more sense as we move from CTD datasets to other
+#' datasets.  This change can be recognized by the `version` value
+#' in the database, which changed fro 1 to 2 on this date.
 #'
 #' @importFrom RSQLite dbConnect dbCreateTable dbDisconnect dbReadTable dbWriteTable SQLite
 #'
@@ -81,7 +89,8 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         # Version table
         if (debug) cat("about to create and write 'version' table\n")
         RSQLite::dbCreateTable(con, "version", c("version" = "INTEGER"))
-        RSQLite::dbWriteTable(con, "version", data.frame(version = 1L), overwrite = TRUE)
+        # version 2: use 'index' instead of 'level'
+        RSQLite::dbWriteTable(con, "version", data.frame(version = 2L), overwrite = TRUE)
         # Tag mapping
         if (debug) cat("about to create and write 'mapping' table\n")
         RSQLite::dbCreateTable(con, "mapping", c(value = "INT", meaning = "TEXT"))

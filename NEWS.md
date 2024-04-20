@@ -1,5 +1,6 @@
 # ocetag 0.0.3
 
+* Database internal version changed from 1 to 2.
 * Flesh out the help and vignette more with examples.
 * Add more tests to the test suite.
 * Rename `ctdtag()` as `ctdTag()`.

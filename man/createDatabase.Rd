@@ -16,9 +16,9 @@ mapping from textual descriptions to numerical codes; see
 \item{tags}{an optional named vector (or a list) that specifies additional column names and
 types for the tag table.  The default set is
 \code{list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")}
-which is likely to be suitable for CTD data, with tags referenced to the depth
-at the stated index (starting with index 1, at the surface).
-See \sQuote{Example} for how pressure may be added.}
+which is likely to be suitable for CTD data, with tags referenced
+to the depth at the stated index (starting with index 1, at the
+surface). See \sQuote{Example} for how pressure may be added.}
 
 \item{debug}{integer value indicating a debugging level.  Use 0 for silent
 operation, or any integer exceeding 1 to show some output during the action
@@ -27,6 +27,17 @@ of this function.}
 \description{
 Create a Database for Tagging
 }
+\section{History of Changes}{
+
+\itemize{
+\item On 2024-04-20, the database switched from storing \code{level} to
+storing \code{index}, which is a more neutral and inclusive term
+that might make more sense as we move from CTD datasets to other
+datasets.  This change can be recognized by the \code{version} value
+in the database, which changed fro 1 to 2 on this date.
+}
+}
+
 \examples{
 # This example uses a temporary file and unlinks it later;
 # obviously, this is not what would be done in practice, but

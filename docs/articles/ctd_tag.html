@@ -158,13 +158,19 @@ tag is saved, <em>not</em> the string value.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/saveTag.html">saveTag</a></span><span class="op">(</span><span class="va">name</span>,</span>
 <span>    index <span class="op">=</span> <span class="va">index</span>, pressure <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="st">"pressure"</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>,</span>
-<span>    tag <span class="op">=</span> <span class="fl">1</span>, analyst <span class="op">=</span> <span class="st">"Dan Kelley"</span>, dbname <span class="op">=</span> <span class="va">dbname</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>    tag <span class="op">=</span> <span class="fl">1</span>, analyst <span class="op">=</span> <span class="st">"Dan Kelley"</span>, dbname <span class="op">=</span> <span class="va">dbname</span>, debug<span class="op">=</span><span class="fl">3</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; before adding ..., df is as follows</span></span>
+<span><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-20 17:16:38</span></span>
+<span><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
+<span><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-20 17:16:38    4.197</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/getTags.html">getTags</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713635990</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713644198</span></span></code></pre></div>
 <p>For readers who are familiar with SQL syntax, note that typing</p>
 <pre><code>echo .dump | sqlite3 dbname</code></pre>
 <p>in a unix terminal yields as follows.</p>

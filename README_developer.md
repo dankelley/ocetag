@@ -1,3 +1,10 @@
+# Changes
+
+* version 1: experimental version (similar to that of argo-summer
+  project)
+* version 2: as version 1, but use 'index' instead of 'level'
+
+
 # Development ideas
 
 1. [ ] Make ctdtag() handle parameters such as

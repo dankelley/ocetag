@@ -41,7 +41,7 @@ createDatabase(dbname, mapping = mapping, tags = tags)
 ## -----------------------------------------------------------------------------
 saveTag(name,
     index = index, pressure = d[["pressure"]][index],
-    tag = 1, analyst = "Dan Kelley", dbname = dbname
+    tag = 1, analyst = "Dan Kelley", dbname = dbname, debug=3
 )
 
 ## -----------------------------------------------------------------------------

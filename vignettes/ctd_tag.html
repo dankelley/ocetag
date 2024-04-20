@@ -402,12 +402,18 @@ the same database name, it will leave the file as it is.)</p>
 tag is saved, <em>not</em> the string value.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">saveTag</span>(name,</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>    <span class="at">index =</span> index, <span class="at">pressure =</span> d[[<span class="st">&quot;pressure&quot;</span>]][index],</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="at">tag =</span> <span class="dv">1</span>, <span class="at">analyst =</span> <span class="st">&quot;Dan Kelley&quot;</span>, <span class="at">dbname =</span> dbname</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span></code></pre></div>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="at">tag =</span> <span class="dv">1</span>, <span class="at">analyst =</span> <span class="st">&quot;Dan Kelley&quot;</span>, <span class="at">dbname =</span> dbname, <span class="at">debug=</span><span class="dv">3</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; before adding ..., df is as follows</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-20 17:06:52</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-20 17:06:52    4.197</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">getTags</span>(name, <span class="at">dbname =</span> dbname))</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713635451</span></span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713643612</span></span></code></pre></div>
 <p>For readers who are familiar with SQL syntax, note that typing</p>
 <pre><code>echo .dump | sqlite3 dbname</code></pre>
 <p>in a unix terminal yields as follows.</p>
