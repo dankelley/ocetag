@@ -99,7 +99,7 @@ saveTag(name,
 )
 ```
 
-Readering the tags later is just as simple.
+Reading the tags later is just as simple.
 ```{r}
 print(getTags(name, dbname = dbname))
 ```
@@ -117,20 +117,20 @@ CREATE TABLE `version` (
   `version` INTEGER
 );
 INSERT INTO version VALUES(1);
-CREATE TABLE `tagMapping` (
+CREATE TABLE `mapping` (
   `value` INTEGER,
   `name` TEXT
 );
-INSERT INTO tagMapping VALUES(1,'MLD');
+INSERT INTO mapping VALUES(1,'MLD');
 CREATE TABLE `tags` (
   `file` TEXT,
   `index` INT,
+  `pressure` FLOAT,
   `tag` INT,
   `analyst` TEXT,
-  `analysisTime` TIMESTAMP,
-  `pressure` FLOAT
+  `analysisTime` TIMESTAMP
 );
-INSERT INTO tags VALUES('ctd.cnv',12,1,'Dan Kelley',1713611498,4.197000000000000063);
+INSERT INTO tags VALUES('ctd.cnv',12,4.197000000000000063,1,'Dan Kelley',1713631216);
 COMMIT;
 ```
 

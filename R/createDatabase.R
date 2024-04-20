@@ -59,17 +59,18 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
             )
         }
         # tagsAll starts with a default
-        tagsDefault <- c(
+        tagsDefaultStart <- c(
             "file" = "TEXT",
-            "index" = "INT",
+            "index" = "INT")
+        tagsDefaultEnd <- c(
             "tag" = "INT",
             "analyst" = "TEXT",
             "analysisTime" = "TIMESTAMP"
         )
         if (missing(tags)) {
-            tags <- tagsDefault
+            tags <- c(tagsDefaultStart, tagsDefaultEnd)
         } else {
-            tags <- c(tagsDefault, tags)
+            tags <- c(tagsDefaultStart, tags, tagsDefaultEnd)
         }
         if (debug > 0) {
             cat("tags (including user-specified and default):\n")
