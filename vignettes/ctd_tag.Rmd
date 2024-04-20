@@ -115,7 +115,7 @@ BEGIN TRANSACTION;
 CREATE TABLE `version` (
   `version` INTEGER
 );
-INSERT INTO version VALUES(1);
+INSERT INTO version VALUES(2);
 CREATE TABLE `mapping` (
   `value` INTEGER,
   `name` TEXT
