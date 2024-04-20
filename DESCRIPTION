@@ -1,6 +1,6 @@
 Package: ocetag
 Title: Tag Features on Oceanographic Datasets
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: c(person(
             given="Dan",
             family="Kelley",

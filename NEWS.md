@@ -1,3 +1,8 @@
+# ocetag 0.0.3
+
+* Flesh out the help and vignette more with examples.
+* Add more tests to the test suite.
+
 # ocetag 0.0.2
 
 * Change `createDatabase()` and `saveTag()` to handle arbitrary column names.
