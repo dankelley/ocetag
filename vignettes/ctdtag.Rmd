@@ -76,9 +76,9 @@ mapping <- list("MLD" = 1)
 tags <- list("pressure" = "FLOAT")
 ```
 
-Now we are ready for the database work.  First, we create the database.  (This
-step is not required for later work, and so if you run this step again,
-`createDatabase()` leaves the existing file as it is.
+We now have what we need to for the database work.  First, we create the
+database.  (NB. if `createDatabase()` is called again with the same database
+name, it will leave the file as it is.)
 
 ```{r echo=FALSE}
 dbname <- tempfile() # Do not use a tempfile() in actual work!!
@@ -99,13 +99,12 @@ saveTag(name,
 )
 ```
 
-Reading the tags later is just as simple.
+Reading the tags later is also simple.
 ```{r}
 print(getTags(name, dbname = dbname))
 ```
 
-The database can be viewed with several system-level tools, e.g.
-typing
+For readers who are familiar with SQL syntax, note that typing
 ```
 echo .dump | sqlite3 dbname
 ```

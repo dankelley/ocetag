@@ -393,10 +393,9 @@ we would name a particular file, and we would not erase it!)</p>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>mapping <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">&quot;MLD&quot;</span> <span class="ot">=</span> <span class="dv">1</span>)</span></code></pre></div>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Add &#39;pressure&#39; to the columns in the default &#39;tags&#39; table.</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>tags <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">&quot;pressure&quot;</span> <span class="ot">=</span> <span class="st">&quot;FLOAT&quot;</span>)</span></code></pre></div>
-<p>Now we are ready for the database work. First, we create the
-database. (This step is not required for later work, and so if you run
-this step again, <code>createDatabase()</code> leaves the existing file
-as it is.</p>
+<p>We now have what we need to for the database work. First, we create
+the database. (NB. if <code>createDatabase()</code> is called again with
+the same database name, it will leave the file as it is.)</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>dbname <span class="ot">&lt;-</span> <span class="st">&quot;tags.db&quot;</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">createDatabase</span>(dbname, <span class="at">mapping =</span> mapping, <span class="at">tags =</span> tags)</span></code></pre></div>
 <p>Saving the tag is simple. Note that the <em>numeric</em> value of the
@@ -405,12 +404,11 @@ tag is saved, <em>not</em> the string value.</p>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>    <span class="at">index =</span> index, <span class="at">pressure =</span> d[[<span class="st">&quot;pressure&quot;</span>]][index],</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>    <span class="at">tag =</span> <span class="dv">1</span>, <span class="at">analyst =</span> <span class="st">&quot;Dan Kelley&quot;</span>, <span class="at">dbname =</span> dbname</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span></code></pre></div>
-<p>Reading the tags later is just as simple.</p>
+<p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">getTags</span>(name, <span class="at">dbname =</span> dbname))</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713631352</span></span></code></pre></div>
-<p>The database can be viewed with several system-level tools, e.g.
-typing</p>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713632949</span></span></code></pre></div>
+<p>For readers who are familiar with SQL syntax, note that typing</p>
 <pre><code>echo .dump | sqlite3 dbname</code></pre>
 <p>in a unix terminal yields as follows.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>PRAGMA foreign_keys<span class="op">=</span><span class="kw">OFF</span>;</span>
