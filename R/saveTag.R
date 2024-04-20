@@ -67,8 +67,20 @@ saveTag <- function(file, index, ..., tag,
         cat("after possibly adding ..., df is as follows\n")
         print(df)
     }
-    # FIXME: ensure that all named fields exist in the db
     con <- dbConnect(RSQLite::SQLite(), dbname)
+    if (RSQLite::dbExistsTable(con, "tags")) {
+        existingTags <- RSQLite::dbReadTable(con, "tags")
+    }
+    # Ensure that all named fields exist in the db
+    newnames <- sort(names(df))
+    oldnames <- sort(names(existingTags))
+    if (!identical(sort(names(existingTags)), sort(names(df)))) {
+        stop(
+            "Column name mismatch\n",
+            "  saveTag() has        c(\"", paste(newnames, collapse = "\",\""), "\")\n",
+            "  createDatabase() had c(\"", paste(oldnames, collapse = "\",\""), "\")"
+        )
+    }
     RSQLite::dbAppendTable(con, "tags", df)
     RSQLite::dbDisconnect(con)
 }
