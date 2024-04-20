@@ -72,9 +72,9 @@ saveTag <- function(file, index, ..., tag,
         existingTags <- RSQLite::dbReadTable(con, "tags")
     }
     # Ensure that all named fields exist in the db
-    newnames <- sort(names(df))
-    oldnames <- sort(names(existingTags))
-    if (!identical(sort(names(existingTags)), sort(names(df)))) {
+    newnames <- names(df)
+    oldnames <- names(existingTags)
+    if (!identical(sort(newnames), sort(oldnames))) {
         stop(
             "Column name mismatch\n",
             "  saveTag() has        c(\"", paste(newnames, collapse = "\",\""), "\")\n",

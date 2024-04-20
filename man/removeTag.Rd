@@ -4,13 +4,13 @@
 \alias{removeTag}
 \title{Remove a tag}
 \usage{
-removeTag(file = NULL, level = NULL, dbname = NULL, debug = 0)
+removeTag(file = NULL, index = NULL, dbname = NULL, debug = 0)
 }
 \arguments{
 \item{file}{character value naming the CTD file.  Only items relating
 to this file are returned.}
 
-\item{level}{integer specifying the sequence value of the data point that was tagged.}
+\item{index}{integer specifying the sequence value of the data point that was tagged.}
 
 \item{dbname}{character value naming the database.}
 

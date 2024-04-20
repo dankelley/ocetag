@@ -26,8 +26,8 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 </ul>
 <li> <i>Zoom and pan</i></p></li>
 <ul>
-<li> <b>i</b> zoom in (narrow the 'level' range) near the mouse</li>
-<li> <b>o</b> zoom out (widen the 'level' range)</li>
+<li> <b>i</b> zoom in (narrow the 'index' range) near the mouse</li>
+<li> <b>o</b> zoom out (widen the 'index' range)</li>
 <li> <b>O</b> (upper-case 'o') zoom all the way out</li>
 <li> <b>j</b> move down in water column</li>
 <li> <b>k</b> move up in water column</li>
@@ -43,8 +43,8 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 
 overallHelp <- c(helpMouse, helpKeyboard)
 
-findNearestLevel <- function(x, y, usr, data, view, debug = 0) {
-    dmsg(debug, "findNearestLevel(", x, ",", y, "..., view=", view, ")\n")
+findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
+    dmsg(debug, "findNearestIndex(", x, ",", y, "..., view=", view, ")\n")
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
     # start BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
@@ -168,7 +168,7 @@ ctdTagUI <- fluidPage(
     ),
     wellPanel(
         fluidRow(
-            column(12, uiOutput("levelMsg")),
+            column(12, uiOutput("indexMsg")),
             column(12, uiOutput("tagMsg"))
         )
     ),
@@ -208,7 +208,7 @@ ctdTagServer <- function(input, output, session) {
         ctd = NULL, # set by observeEvent(input$fileSelect)
         data = NULL, # set by observeEvent(input$fileSelect)
         ndata = NULL, # set by observeEvent(input$fileSelect)
-        level = NULL, # set by observeEvent(input$fileSelect)
+        index = NULL, # set by observeEvent(input$fileSelect)
         scan = NULL, # set by observeEvent(input$fileSelect)
         yProfile = NULL, # set by observeEvent(input$fileSelect)
         ylabProfile = NULL, # set by observeEvent(input$fileSelect)
@@ -217,13 +217,13 @@ ctdTagServer <- function(input, output, session) {
     )
 
     focusIsTagged <- function() {
-        !is.null(state$level) && (state$level %in% getTags(state$fileWithPath, dbname = dbname, debug = debug - 1)$level)
+        !is.null(state$index) && (state$index %in% getTags(state$fileWithPath, dbname = dbname, debug = debug - 1)$index)
     }
 
     focusTags <- function() {
-        if (!is.null(state$level) && !is.null(state$file)) {
+        if (!is.null(state$index) && !is.null(state$file)) {
             tags <- getTags(state$fileWithPath, dbname = dbname, debug = debug - 1)
-            tags[tags$level == state$level, "tag"]
+            tags[tags$index == state$index, "tag"]
         }
     }
 
@@ -239,23 +239,27 @@ ctdTagServer <- function(input, output, session) {
     })
 
     observeEvent(input$click, {
-        state$level <<- findNearestLevel(input$click$x, input$click$y, state$usr, state$data, input$view)
-        state$scan <<- state$data$scan[state$level]
-        dmsg(debug, "observeEvent(input$click) set state$level=", state$level, ", state$scan=", state$scan, "\n")
+        state$index <<- findNearestIndex(input$click$x, input$click$y, state$usr, state$data, input$view)
+        state$scan <<- state$data$scan[state$index]
+        dmsg(debug, "observeEvent(input$click) set state$index=", state$index, ", state$scan=", state$scan, "\n")
     })
 
     observeEvent(input$keypressTrigger, {
         key <- intToUtf8(input$keypress)
         # dmsg(debug, key, "\n")
         if (key %in% as.character(0:9)) {
-            if (is.null(state$level)) {
+            if (is.null(state$index)) {
                 showNotification("No focus points")
             } else {
                 dmsg(debug, "responding to '", key, "' to tag the focus point\n")
-                if (state$visible[state$level]) {
+                if (state$visible[state$index]) {
                     saveTag(
-                        file = state$fileWithPath, level = state$level, scan = state$data$scan[state$level],
-                        tag = as.integer(key), analyst = state$analyst, dbname = dbname, debug = debug - 1
+                        file = state$fileWithPath,
+                        index = state$index,
+                        tag = as.integer(key),
+                        analyst = state$analyst,
+                        dbname = dbname,
+                        debug = debug - 1L
                     )
                     state$step <<- state$step + 1 # other shiny elements notice this
                 } else {
@@ -265,14 +269,14 @@ ctdTagServer <- function(input, output, session) {
         } else if (key == "i") {
             if (!is.null(input$hover$x)) {
                 dmsg(debug, "responding to 'i': zoom in\n")
-                nearestLevel <- findNearestLevel(
+                nearestIndex <- findNearestIndex(
                     input$hover$x, input$hover$y, state$usr,
                     state$data, input$view
                 )
                 span <- sum(state$visible)
                 if (span > default$focus$minimumSpan) {
                     span <- span / 4
-                    limits <- limitsTrim(nearestLevel + c(-span / 2, span / 2), state$ndata)
+                    limits <- limitsTrim(nearestIndex + c(-span / 2, span / 2), state$ndata)
                     state$visible <- limitsToVisible(limits, state$ndata)
                 }
             }
@@ -304,12 +308,12 @@ ctdTagServer <- function(input, output, session) {
         } else if (key == "x") {
             dmsg(debug, "responding to 'x' to remove tag\n")
             if (focusIsTagged()) {
-                removeTag(file = state$fileWithPath, level = state$level, dbname = dbname, debug = debug - 1)
+                removeTag(file = state$fileWithPath, index = state$index, dbname = dbname, debug = debug - 1)
                 state$step <<- state$step + 1 # other shiny elements notice this
             }
         } else if (key == "u") {
             dmsg(debug, "responding to 'u' to remove focus point (i.e. crossed point)\n")
-            state$level <<- NULL
+            state$index <<- NULL
             state$step <<- state$step + 1 # other shiny elements notice this
         } else if (key == "?") {
             shiny::showModal(shiny::modalDialog(
@@ -343,8 +347,11 @@ ctdTagServer <- function(input, output, session) {
             stop(msg)
         }
         state$file <<- input$fileSelect
-        state$fileWithPath <<- normalizePath(input$fileSelect)
-        ctd <- oce::read.oce(state$file)
+        #message(oce::vectorShow(path))
+        #message(oce::vectorShow(state$file))
+        state$fileWithPath <<- normalizePath(paste0(path, "/", input$fileSelect))
+        #message(oce::vectorShow(state$fileWithPath))
+        ctd <- oce::read.oce(state$fileWithPath)
         state$ctd <<- ctd
         pressure <- ctd[["pressure"]]
         if (is.null(pressure)) {
@@ -367,7 +374,7 @@ ctdTagServer <- function(input, output, session) {
             spiciness0 = ctd[["spiciness0"]]
         )
         ndata <- length(pressure)
-        state$level <- NULL # remove focus point
+        state$index <- NULL # remove focus point
         state$ndata <<- ndata
         state$visible <- rep(TRUE, ndata)
         state$data$yProfile <<- pressure
@@ -376,7 +383,7 @@ ctdTagServer <- function(input, output, session) {
         state$latitude <- ctd[["latitude"]][1]
     })
 
-    output$levelMsg <- renderText({
+    output$indexMsg <- renderText({
         state$step # to cause shiny to update this
         pvisible <- state$data$pressure[state$visible]
         msg <- ""
@@ -384,8 +391,8 @@ ctdTagServer <- function(input, output, session) {
             top <- min(pvisible, na.rm = TRUE)
             bot <- max(pvisible, na.rm = TRUE)
             msg <- sprintf("CTD file \"%s\" [%.1f to %.1f dbar shown]", state$fileWithPath, top, bot)
-            if (!is.null(state$level)) {
-                p <- state$data$pressure[state$level]
+            if (!is.null(state$index)) {
+                p <- state$data$pressure[state$index]
                 if (focusIsTagged()) {
                     msg <- paste(
                         msg,
@@ -458,10 +465,10 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
+                if (!is.null(state$index)) {
                     with(
                         default$focus,
-                        points(state$data$CT[state$level], state$data$yProfile[state$level],
+                        points(state$data$CT[state$index], state$data$yProfile[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -470,7 +477,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$CT[tags$level], state$data$yProfile[tags$level],
+                        points(state$data$CT[tags$index], state$data$yProfile[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -492,10 +499,10 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
+                if (!is.null(state$index)) {
                     with(
                         default$focus,
-                        points(state$data$SA[state$level], state$data$yProfile[state$level],
+                        points(state$data$SA[state$index], state$data$yProfile[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -504,7 +511,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$SA[tags$level], state$data$yProfile[tags$level],
+                        points(state$data$SA[tags$index], state$data$yProfile[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -526,11 +533,11 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
-                    dmsg(debug, "sigma profile... ", vectorShow(state$level))
+                if (!is.null(state$index)) {
+                    dmsg(debug, "sigma profile... ", vectorShow(state$index))
                     with(
                         default$focus,
-                        points(state$data$sigma0[state$level], state$data$yProfile[state$level],
+                        points(state$data$sigma0[state$index], state$data$yProfile[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -539,7 +546,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$sigma0[tags$level], state$data$yProfile[tags$level],
+                        points(state$data$sigma0[tags$index], state$data$yProfile[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -561,11 +568,11 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
-                    dmsg(debug, "spiciness profile... ", vectorShow(state$level))
+                if (!is.null(state$index)) {
+                    dmsg(debug, "spiciness profile... ", vectorShow(state$index))
                     with(
                         default$focus,
-                        points(state$data$spiciness0[state$level], state$data$yProfile[state$level],
+                        points(state$data$spiciness0[state$index], state$data$yProfile[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -574,7 +581,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$spiciness0[tags$level], state$data$yProfile[tags$level],
+                        points(state$data$spiciness0[tags$index], state$data$yProfile[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -596,10 +603,10 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
+                if (!is.null(state$index)) {
                     with(
                         default$focus,
-                        points(state$data$scan[state$level], state$data$yProfile[state$level],
+                        points(state$data$scan[state$index], state$data$yProfile[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -608,7 +615,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$scan[tags$level], state$data$yProfile[tags$level],
+                        points(state$data$scan[tags$index], state$data$yProfile[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -639,10 +646,10 @@ ctdTagServer <- function(input, output, session) {
                     )
                 )
                 state$usr <<- par("usr")
-                if (!is.null(state$level)) {
+                if (!is.null(state$index)) {
                     with(
                         default$focus,
-                        points(state$data$SA[state$level], state$data$CT[state$level],
+                        points(state$data$SA[state$index], state$data$CT[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -651,7 +658,7 @@ ctdTagServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$SA[tags$level], state$data$CT[tags$level],
+                        points(state$data$SA[tags$index], state$data$CT[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
@@ -674,12 +681,15 @@ ctdTagServer <- function(input, output, session) {
             tags <- tags[focus, ]
             if (!is.null(tags)) {
                 tags$analysisTime <- numberAsPOSIXct(tags$analysisTime)
-                tags$pressure <- state$data$pressure[tags$level]
+                tags$pressure <- state$data$pressure[tags$index]
                 tags <- tags[order(tags$pressure), ]
                 # if (requireNamespace("DT", quietly = TRUE)) {
                 #    DT::renderDT(tags[, c("pressure", "tag", "analyst", "analysisTime")], rownames = FALSE)
                 # } else {
-                renderTable(tags[, c("pressure", "tag", "analyst", "analysisTime")])
+                table <- tags[, c("index", "pressure", "tag", "analyst", "analysisTime")]
+                table$analysisTime <- format(as.POSIXct(table$analysisTime))
+                #print(table)
+                renderTable(table)
                 # }
             }
         }
