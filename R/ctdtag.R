@@ -125,7 +125,7 @@ default <- list(
 #' @importFrom graphics axis box mtext par text
 #'
 #' @importFrom utils head tail
-uiCtdtag <- fluidPage(
+ctdTagUI <- fluidPage(
     tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style = "background:#e6f3ff;cursor:crosshair;",
@@ -187,7 +187,7 @@ uiCtdtag <- fluidPage(
 
 #' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
 ## @importFrom DT renderDT
-serverCtdtag <- function(input, output, session) {
+ctdTagServer <- function(input, output, session) {
     path <- shiny::getShinyOption("path", default = ".")
     suffix <- shiny::getShinyOption("suffix", default = ".cnv")
     dbprefix <- shiny::getShinyOption("dbprefix", default = "~/ctdtag")
@@ -727,7 +727,7 @@ serverCtdtag <- function(input, output, session) {
 #' @author Dan Kelley
 #'
 #' @export
-ctdtag <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
+ctdTag <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
     shinyOptions(path = path, suffix = suffix, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
-    shinyApp(uiCtdtag, serverCtdtag)
+    shinyApp(ctdTagUI, ctdTagServer)
 }

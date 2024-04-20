@@ -17,7 +17,7 @@ of this function.}
 \code{\link[=getTagMapping]{getTagMapping()}} returns a data frame of tag value:meaning pairss.
 }
 \description{
-A utility function, used by \code{\link[=ctdtag]{ctdtag()}} to get textual descriptions
+A utility function, used by \code{\link[=ctdTag]{ctdTag()}} to get textual descriptions
 of the meanings of the numerical tags.
 }
 \author{

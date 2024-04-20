@@ -2,6 +2,7 @@
 
 * Flesh out the help and vignette more with examples.
 * Add more tests to the test suite.
+* Rename `ctdtag()` as `ctdTag()`.
 
 # ocetag 0.0.2
 

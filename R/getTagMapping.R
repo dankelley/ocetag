@@ -1,6 +1,6 @@
 #' Get Mapping of Tag Value to Tag Meaning
 #'
-#' A utility function, used by [ctdtag()] to get textual descriptions
+#' A utility function, used by [ctdTag()] to get textual descriptions
 #' of the meanings of the numerical tags.
 #'
 #' @template dbnameTemplate
