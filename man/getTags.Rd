@@ -17,11 +17,23 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \value{
-\code{\link[=getTagMapping]{getTagMapping()}} returns a data frame holding the \code{code} and
-\code{meaning} of each possible tag.
+\code{\link[=getTags]{getTags()}} returns a data frame holding the tags that
+have been saved for a particular data file.
 }
 \description{
 Get Tag Mapping from the Database
+}
+\examples{
+# This example uses a temporary file and unlinks it later;
+# obviously, this is not what would be done in practice, but
+# it is necessary for the example to pass CRAN checks.
+dbname <- tempfile() # do not do this in practice
+createDatabase(dbname)
+saveTag("ctd.cnv", index = 1, tag = 2, analyst = "Dan Kelley", dbname = dbname)
+tags <- getTags("ctd.cnv", dbname = dbname)
+print(tags)
+unlink(dbname) # do not do this in practice
+
 }
 \author{
 Dan Kelley

@@ -6,42 +6,48 @@
 #'
 #' @template dbnameTemplate
 #'
-#' @param mapping an optional list value that specifies a mapping from numerical tag
-#' codes to textual descriptions.  If not provided, a scheme common with CTD
-#' data is used.  (See \sQuote{Examples}.)
+#' @param mapping a named vector (or a list) that specifies a
+#' mapping from textual descriptions to numerical codes; see
+#' \sQuote{Examples}.
 #'
-#' @param tags an optional list that specifies the column names and types for
-#' the tag table.  If not provided, a scheme suitable for CTD data is used.
+#' @param tags an optional named vector (or a list) that specifies additional column names and
+#' types for the tag table.  The default set is
+#' `list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")`
+#' which is likely to be suitable for CTD data, with tags referenced to the depth
+#' at the stated index (starting with index 1, at the surface).
+#' See \sQuote{Example} for how pressure may be added.
 #'
 #' @template debugTemplate
 #'
-#' @author Dan Kelley
-#'
 #' @examples
-#'\dontrun{
+#' # This example uses a temporary file and unlinks it later;
+#' # obviously, this is not what would be done in practice, but
+#' # it is necessary for the example to pass CRAN checks.
 #' library(ocetag)
-#' mapping <- list("good data" = 1, "bad data" = 4)
-#' tags <- list(
-#'     "file" = "TEXT",
-#'     "level" = "INT",
-#'     "tag" = "INT",
-#'     "analyst" = "TEXT",
-#'     "analysisTime" = "TIMESTAMP"
-#' )
-#' unlink("test.db")
-#' db <- createDatabase("test.db", mapping = mapping, tags = tags, debug = 2)
-#' system("echo .dump|sqlite3 test.db")
-#'}
+#' # Use a simple mapping
+#' mapping <- c("good data" = 1, "bad data" = 4)
+#' # Add pressure to the 'tags' database
+#' tags <- c("pressure" = "FLOAT")
+#' dbname <- tempfile() # do not do this in practice
+#' # Finally, create the database.
+#' createDatabase(dbname, mapping = mapping, tags = tags)
+#' unlink(dbname) # do not do this in practice
 #'
 #' @importFrom RSQLite dbConnect dbCreateTable dbDisconnect dbReadTable dbWriteTable SQLite
+#'
+#' @author Dan Kelley
+#'
 #' @export
 createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0) {
+    if (!(is.character(dbname) && nchar(dbname) > 0L)) {
+        stop("dbname must be a non-empty character value")
+    }
     debug <- if (debug[1] > 0) 1L else 0L
-    dmsg("dbname=\"", dbname, "\", debug=", debug, "\n")
     if (!file.exists(dbname)) {
+        dmsg(debug, "Creating database file \"", dbname, "\"\n")
         if (missing(mapping)) {
             dmsg("using default mapping, common with CTD data\n")
-            mapping <- list(
+            mapping <- c(
                 "no QC performed" = 0,
                 "good data" = 1,
                 "probably good" = 2,
@@ -52,49 +58,47 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
                 "missing value" = 9
             )
         }
+        # tagsAll starts with a default
+        tagsDefault <- c(
+            "file" = "TEXT",
+            "index" = "INT",
+            "tag" = "INT",
+            "analyst" = "TEXT",
+            "analysisTime" = "TIMESTAMP"
+        )
         if (missing(tags)) {
-            tags <- list(
-                "file" = "TEXT",
-                "level" = "INT",
-                "scan" = "INT",
-                "analyst" = "TEXT",
-                "analysisTime" = "TIMESTAMP"
-            )
+            tags <- tagsDefault
+        } else {
+            tags <- c(tagsDefault, tags)
         }
-        dmsg(debug, "Creating database file \"", dbname, "\"\n")
-        if (!(is.character(dbname) && nchar(dbname) > 0L)) {
-            stop("dbname must be a non-empty character value")
+        if (debug > 0) {
+            cat("tags (including user-specified and default):\n")
+            print(tags)
         }
-        if (!is.list(mapping)) {
-            stop("'mapping' must be a list")
-        }
+        dmsg(debug, "about to make SQL connection\n")
         con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
         # Version table
+        if (debug) cat("about to create and write 'version' table\n")
         RSQLite::dbCreateTable(con, "version", c("version" = "INTEGER"))
         RSQLite::dbWriteTable(con, "version", data.frame(version = 1L), overwrite = TRUE)
-        # Mapping table (start with default)
-        # tagMapping <- data.frame(value = 0:9, meaning = as.character(0:9))
-        tagMapping <- data.frame(
-            value = as.integer(mapping),
-            meaning = names(mapping)
-        )
-        # cat("initial tagMapping...\n");print(tagMapping)
-        tagValue <- as.integer(mapping)
-        tagMeaning <- names(mapping)
-        if (debug > 0) {
-            cat("tagValue: ", paste(tagValue, collapse = ";"), "\n")
-            cat("tagMeaning: ", paste(tagMeaning, collapse = ";"), "\n")
+        # Tag mapping
+        if (debug) cat("about to create and write 'mapping' table\n")
+        RSQLite::dbCreateTable(con, "mapping", c(value = "INT", meaning = "TEXT"))
+        # Revise mapping as a data frame, for inclusion in db
+        mapping <- data.frame(value = as.integer(mapping), name = names(mapping))
+        if (debug) {
+            cat("next is mapping used for tags\n")
+            print(mapping)
         }
-        # cat("final tagMapping...\n");print(tagMapping)
-        RSQLite::dbCreateTable(con, "tagMapping", c(value = "INT", meaning = "TEXT"))
-        RSQLite::dbWriteTable(con, "tagMapping",
-            data.frame(value = as.integer(mapping), name = names(mapping)),
-            overwrite = TRUE
-        )
-        # Tag table
-        tagTableSpecification <- as.character(tags)
-        names(tagTableSpecification) <- names(tags)
-        RSQLite::dbCreateTable(con, "tags", tagTableSpecification)
+        RSQLite::dbWriteTable(con, "mapping", mapping, overwrite = TRUE)
+        # Update 'tags', reform into a named vector, and then store in db
+        if (debug) {
+            cat("about to create and write 'tags' table\n")
+            cat("next is tags\n")
+            print(tags)
+        }
+        RSQLite::dbCreateTable(con, "tags", tags)
+        dmsg(debug, "about to disconnect db\n")
         RSQLite::dbDisconnect(con)
     } else {
         dmsg(debug, "Using existing database file \"", dbname, "\"\n")

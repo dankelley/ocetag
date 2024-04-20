@@ -1,8 +1,6 @@
 README.Rmd
 ^.*\.db$
 .lintr
-^.*\.cnv$
-^.*\.CNV$
 man-roxygen
 ^.*\.Rproj$
 ^\.Rproj\.user$
@@ -10,3 +8,5 @@ man-roxygen
 README_developer.md
 .github
 _pkgdown.yml
+^vignettes/figure$
+^vignettes/*.html$

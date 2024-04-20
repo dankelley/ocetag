@@ -1,0 +1,140 @@
+---
+title: "Tagging CTD Data"
+author: "Dan Kelley (https://orcid.org/0000-0001-7808-5911)"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: true
+    fig_caption: yes
+    fig_width: 3.5
+    fig_height: 3.5
+    dpi: 72
+    dev.args: list(pointsize=11)
+vignette: >
+  %\VignetteIndexEntry{Tagging CTD Data}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options:
+  markdown:
+    wrap: 72
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+**Abstract.** This vignette shows how to use low-level `ocetag` functions to
+set up a tagging database, how to add entries to it, and how to recover
+entries.
+
+First, read a CTD file and plot a density profile. You may ignore the warnings,
+one of which indicates that the file has an erroneous start-time, the other of
+which indicates that the file provides temperature on an archaic scale, which
+gets auto-converted by `read.oce()`.
+
+In the plot, you may notice evidence of a mixed layer within the top 10m of the
+water column. The code block below is written so that `locator()` will be
+called if you run it interactively and otherwise, as in the building of this
+vignette, the result is inserted directly. Note that the `ctdtag()` function
+provides better ways to indicate such points, but the purpose here is to show
+how to use the low-level functions.
+
+```{r}
+library(ocetag)
+library(oce)
+name <- "ctd.cnv"
+f <- system.file("extdata", name, package = "ocetag")
+d <- oce::read.oce(f)
+plotProfile(d, xtype = "sigma0", type = "p", cex = 0.3)
+# Change next to TRUE for interactive work
+if (FALSE) {
+    xy <- locator(1)
+    usr <- par("usr")
+    dx <- (xy$x - d[["sigma0"]]) / (usr[2] - usr[1])
+    dy <- (xy$y - d[["pressure"]]) / (usr[4] - usr[3])
+    index <- which.min(dx^2 + dy^2)
+} else {
+    index <- 12
+}
+points(d[["sigma0"]][index], d[["pressure"]][index], pch = 3, col = 2, cex = 2)
+mtext(sprintf("Red cross at index %d", index), side = 1, col = 2, line = -1)
+```
+
+Now, we know the point to tag, and the next step is to tag it.  First, we
+create a database.  (To satisfy rules of CRAN packages, here we are creating a
+temporary file and then removing it. In actual use, of course we would name a
+particular file, and we would not erase it!)
+
+```{r}
+# Define the list of tags, here just one, for mixed-layer depth.
+mapping <- list("MLD" = 1)
+```
+
+```{r}
+# Add 'pressure' to the columns in the default 'tags' table.
+tags <- list("pressure" = "FLOAT")
+```
+
+Now we are ready for the database work.  First, we create the database.  (This
+step is not required for later work, and so if you run this step again,
+`createDatabase()` leaves the existing file as it is.
+
+```{r echo=FALSE}
+dbname <- tempfile() # Do not use a tempfile() in actual work!!
+```
+```{r eval=FALSE}
+dbname <- "tags.db"
+```
+```{r}
+createDatabase(dbname, mapping = mapping, tags = tags)
+```
+
+Saving the tag is simple. Note that the *numeric* value of the tag is
+saved, *not* the string value.
+```{r}
+saveTag(name,
+    index = index, pressure = d[["pressure"]][index],
+    tag = 1, analyst = "Dan Kelley", dbname = dbname
+)
+```
+
+Readering the tags later is just as simple.
+```{r}
+print(getTags(name, dbname = dbname))
+```
+
+The database can be viewed with several system-level tools, e.g.
+typing
+```
+echo .dump | sqlite3 dbname
+```
+in a unix terminal yields as follows.
+```{sql eval=FALSE}
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE `version` (
+  `version` INTEGER
+);
+INSERT INTO version VALUES(1);
+CREATE TABLE `tagMapping` (
+  `value` INTEGER,
+  `name` TEXT
+);
+INSERT INTO tagMapping VALUES(1,'MLD');
+CREATE TABLE `tags` (
+  `file` TEXT,
+  `index` INT,
+  `tag` INT,
+  `analyst` TEXT,
+  `analysisTime` TIMESTAMP,
+  `pressure` FLOAT
+);
+INSERT INTO tags VALUES('ctd.cnv',12,1,'Dan Kelley',1713611498,4.197000000000000063);
+COMMIT;
+```
+
+```{r echo=FALSE}
+unlink(dbname) # Do not erase your efforts in actual work!!
+```
+

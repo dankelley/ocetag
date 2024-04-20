@@ -5,21 +5,24 @@
 \title{Save a tag}
 \usage{
 saveTag(
-  file = NULL,
-  level = NULL,
-  scan = NULL,
-  tag = NULL,
-  analyst = NULL,
-  dbname = NULL,
+  file,
+  index,
+  ...,
+  tag,
+  analyst = "anonymous",
+  dbname = getDatabaseName(),
   debug = 0
 )
 }
 \arguments{
 \item{file}{character value naming the CTD file.}
 
-\item{level}{integer specifying the sequence value of the tagged data point.}
+\item{index}{integer specifying the sequence value of the tagged
+data point.}
 
-\item{scan}{integer specifying the scan number of the tagged data point.}
+\item{\dots}{optional extra columns to be stored in the database.
+These must have been specified in the \code{\link[=createDatabase]{createDatabase()}} call
+that created the database named in \code{dbname}.}
 
 \item{tag}{numerical value of the tag.}
 
@@ -34,6 +37,18 @@ of this function.}
 }
 \description{
 Save a tag
+}
+\examples{
+# This example uses a temporary file and unlinks it later;
+# obviously, this is not what would be done in practice, but
+# it is necessary for the example to pass CRAN checks.
+dbname <- tempfile() # do not do this in practice
+createDatabase(dbname)
+saveTag("ctd.cnv", index = 1, tag = 2, analyst = "Dan Kelley", dbname = dbname)
+tags <- getTags("ctd.cnv", dbname = dbname)
+print(tags)
+unlink(dbname) # do not do this in practice
+
 }
 \author{
 Dan Kelley
