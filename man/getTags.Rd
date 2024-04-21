@@ -17,7 +17,7 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \value{
-\code{\link[=getTags]{getTags()}} returns a data frame holding the tags that
+\link{getTags} returns a data frame holding the tags that
 have been saved for a particular data file.
 }
 \description{

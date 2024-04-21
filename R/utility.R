@@ -1,6 +1,6 @@
 #' Get user name
 #'
-#' @return [getUserName()] returns a character value naming the user, i.e.
+#' @return [getUserName] returns a character value naming the user, i.e.
 #' holding the user's login name.
 #'
 #' @author Dan Kelley
@@ -29,7 +29,7 @@ dmsg <- function(debug, ...) {
 
 #' Get user name
 #'
-#' @return [getUserName()] returns a character value that is the user's
+#' @return [getUserName] returns a character value that is the user's
 #' login name on this computer.
 #'
 #' @author Dan Kelley

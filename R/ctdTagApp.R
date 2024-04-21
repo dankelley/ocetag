@@ -738,7 +738,7 @@ ctdTagServer <- function(input, output, session) {
 #' @author Dan Kelley
 #'
 #' @export
-ctdTag <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
+ctdTagApp <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
     shinyOptions(path = path, suffix = suffix, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
     shinyApp(ctdTagUI, ctdTagServer)
 }

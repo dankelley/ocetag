@@ -11,7 +11,7 @@ getDatabaseName(dbprefix = "~/ocetag")
 value places the database in the user's top level.}
 }
 \value{
-\code{\link[=getDatabaseName]{getDatabaseName()}} returns a character string holding the full
+\link{getDatabaseName} returns a character string holding the full
 pathname of the database.
 }
 \description{

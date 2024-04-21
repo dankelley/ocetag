@@ -8,7 +8,7 @@
   present-day format.  All functions in the package that deal with the
   database call [updateDatabase()] at the start, as a way to ensure
   backwards compatibility of database files.
-* Rename `ctdtag()` as `ctdTag()` to avoid confusion about help pages
+* Rename `ctdtag()` as `ctdTagApp()` to avoid confusion about help pages
   for the package, as opposed to help pages for the function.
 * Improve the documentation of several functions, and include a full
   example in the vignette.
@@ -22,6 +22,6 @@
 
 # ocetag 0.0.1
 
-* First version, with `ctdtag()` (renamed `ctdTag()` later) being the
-  main user-facing function.
+* First version, with `ctdtag()` (renamed `ctdTagApp()` in version 0.0.3) being
+  the main user-facing function.
 

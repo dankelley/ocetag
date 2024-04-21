@@ -19,7 +19,7 @@ some effort, so changes are unlikely to come from someone double-clicking on
 the file and accidentally changing the contents.
 
 The package offers low-level functions, such as `createDatabase()` and `saveTag()`,
-as well as a high-level Shiny app named `ctdTag()` that lets the analyst explore
+as well as a high-level Shiny app named `ctdTagApp()` that lets the analyst explore
 CTD data in flexible ways, to discover and tag features of interest.
 
 

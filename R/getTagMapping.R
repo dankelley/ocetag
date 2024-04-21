@@ -1,13 +1,12 @@
 #' Get Mapping of Tag Value to Tag Meaning
 #'
-#' A utility function, used by [ctdTag()] to get textual descriptions
-#' of the meanings of the numerical tags.
+#' Get textual descriptions of the meanings of the numerical tags.
 #'
 #' @template dbnameTemplate
 #'
 #' @template debugTemplate
 #'
-#' @return [getTagMapping()] returns a data frame of tag value:meaning pairs.
+#' @return [getTagMapping] returns a data frame of tag value:meaning pairs.
 #'
 #' @author Dan Kelley
 #'

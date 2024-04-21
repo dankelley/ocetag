@@ -9,10 +9,10 @@ getUserName()
 getUserName()
 }
 \value{
-\code{\link[=getUserName]{getUserName()}} returns a character value naming the user, i.e.
+\link{getUserName} returns a character value naming the user, i.e.
 holding the user's login name.
 
-\code{\link[=getUserName]{getUserName()}} returns a character value that is the user's
+\link{getUserName} returns a character value that is the user's
 login name on this computer.
 }
 \description{

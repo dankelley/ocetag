@@ -356,9 +356,9 @@ temperature on an archaic scale, which gets auto-converted by
 10m of the water column. The code block below is written so that
 <code>locator()</code> will be called if you run it interactively and
 otherwise, as in the building of this vignette, the result is inserted
-directly. Note that the <code>ctdtag()</code> function provides better
-ways to indicate such points, but the purpose here is to show how to use
-the low-level functions.</p>
+directly. Note that the <code>ctdTagApp()</code> function provides
+better ways to indicate such points, but the purpose here is to show how
+to use the low-level functions.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(ocetag)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(oce)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>name <span class="ot">&lt;-</span> <span class="st">&quot;ctd.cnv&quot;</span></span>
@@ -406,14 +406,14 @@ tag is saved, <em>not</em> the string value.</p>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; before adding ..., df is as follows</span></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 11:10:06</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 12:06:19</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 11:10:06    4.197</span></span></code></pre></div>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 12:06:19    4.197</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">getTags</span>(name, <span class="at">dbname =</span> dbname))</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713708606</span></span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713711979</span></span></code></pre></div>
 <p>The database can be examined as follows</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">readDatabase</span>(name, <span class="at">dbname =</span> dbname))</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; $mapping</span></span>
@@ -422,7 +422,7 @@ tag is saved, <em>not</em> the string value.</p>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; $tags</span></span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713708606</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713711979</span></span>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; $version</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;   version</span></span>

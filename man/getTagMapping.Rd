@@ -14,11 +14,10 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \value{
-\code{\link[=getTagMapping]{getTagMapping()}} returns a data frame of tag value:meaning pairs.
+\link{getTagMapping} returns a data frame of tag value:meaning pairs.
 }
 \description{
-A utility function, used by \code{\link[=ctdTag]{ctdTag()}} to get textual descriptions
-of the meanings of the numerical tags.
+Get textual descriptions of the meanings of the numerical tags.
 }
 \author{
 Dan Kelley

@@ -7,7 +7,7 @@
 #'
 #' @template debugTemplate
 #'
-#' @return [getTags()] returns a data frame holding the tags that
+#' @return [getTags] returns a data frame holding the tags that
 #' have been saved for a particular data file.
 #'
 #' @examples

@@ -36,7 +36,7 @@ gets auto-converted by `read.oce()`.
 In the plot, you may notice evidence of a mixed layer within the top 10m of the
 water column. The code block below is written so that `locator()` will be
 called if you run it interactively and otherwise, as in the building of this
-vignette, the result is inserted directly. Note that the `ctdtag()` function
+vignette, the result is inserted directly. Note that the `ctdTagApp()` function
 provides better ways to indicate such points, but the purpose here is to show
 how to use the low-level functions.
 

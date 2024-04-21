@@ -3,7 +3,7 @@
 #' @param dbprefix character value used as the start of the name.  The default
 #' value places the database in the user's top level.
 #'
-#' @return [getDatabaseName()] returns a character string holding the full
+#' @return [getDatabaseName] returns a character string holding the full
 #' pathname of the database.
 #'
 #' @author Dan Kelley
