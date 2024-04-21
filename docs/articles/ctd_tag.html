@@ -107,9 +107,9 @@ better ways to indicate such points, but the purpose here is to show how
 to use the low-level functions.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dankelley.github.io/ocetag/" class="external-link">ocetag</a></span><span class="op">)</span></span>
+<span><span class="co">#&gt; Loading required package: gsw</span></span>
 <span><span class="co">#&gt; Loading required package: shiny</span></span>
 <span><span class="co">#&gt; Loading required package: oce</span></span>
-<span><span class="co">#&gt; Loading required package: gsw</span></span>
 <span><span class="co">#&gt; Loading required package: RSQLite</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dankelley.github.io/oce/" class="external-link">oce</a></span><span class="op">)</span></span>
 <span><span class="va">name</span> <span class="op">&lt;-</span> <span class="st">"ctd.cnv"</span></span>
@@ -162,15 +162,15 @@ tag is saved, <em>not</em> the string value.</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; before adding ..., df is as follows</span></span>
 <span><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 12:13:09</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 14:17:02</span></span>
 <span><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
 <span><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 12:13:09    4.197</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 14:17:02    4.197</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/getTags.html">getTags</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713712389</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713719822</span></span></code></pre></div>
 <p>The database can be examined as follows</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/readDatabase.html">readDatabase</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
@@ -180,7 +180,7 @@ tag is saved, <em>not</em> the string value.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $tags</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713712389</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713719822</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $version</span></span>
 <span><span class="co">#&gt;   version</span></span>

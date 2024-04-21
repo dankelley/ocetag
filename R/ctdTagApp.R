@@ -190,7 +190,7 @@ ctdTagAppUI <- fluidPage(
     )
 )
 
-#' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
+#' @importFrom oce as.ctd numberAsPOSIXct oceSetMetadata plotTS resizableLabel vectorShow
 #' @importFrom graphics contour grid
 #' @importFrom gsw gsw_spiciness0
 ## @importFrom DT renderDT
@@ -360,6 +360,14 @@ ctdTagAppServer <- function(input, output, session) {
         state$fileWithPath <<- normalizePath(paste0(path, "/", input$fileSelect))
         #message(oce::vectorShow(state$fileWithPath))
         ctd <- oce::read.oce(state$fileWithPath)
+        if (is.na(ctd[["latitude"]])) {
+            ctd <- oceSetMetadata(ctd, "latitude", 45)
+            warning("added latitude=45 to CTD object\n")
+        }
+        if (is.na(ctd[["longitude"]])) {
+            ctd <- oceSetMetadata(ctd, "longitude", -40)
+            warning("added longitude=-40 to CTD object\n")
+        }
         state$ctd <<- ctd
         pressure <- ctd[["pressure"]]
         if (is.null(pressure)) {
