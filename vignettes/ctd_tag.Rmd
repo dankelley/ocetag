@@ -104,6 +104,11 @@ Reading the tags later is also simple.
 print(getTags(name, dbname = dbname))
 ```
 
+The database can be examined as follows
+```{r}
+print(readDatabase(name, dbname = dbname))
+```
+
 For readers who are familiar with SQL syntax, note that typing
 ```
 echo .dump | sqlite3 dbname

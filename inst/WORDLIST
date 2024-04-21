@@ -2,3 +2,5 @@ CMD
 CTD
 SQLite
 judgements
+readDatabase
+updateDatabase

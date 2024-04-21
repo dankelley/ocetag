@@ -47,6 +47,9 @@ saveTag(name,
 ## -----------------------------------------------------------------------------
 print(getTags(name, dbname = dbname))
 
+## -----------------------------------------------------------------------------
+print(readDatabase(name, dbname = dbname))
+
 ## ----echo=FALSE---------------------------------------------------------------
 unlink(dbname) # Do not erase your efforts in actual work!!
 

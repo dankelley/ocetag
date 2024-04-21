@@ -17,7 +17,7 @@ of this function.}
 Examine the named database, and update it if required (see
 \sQuote{Details}). Report an error if the file does not
 exist, or if the file does exist, but it is not an SQLite file
-containg tables named \code{version}, \code{tagMapping} and \code{tags}.
+containing tables named \code{version}, \code{tagMapping} and \code{tags}.
 }
 \details{
 The following is a history of changes to the database schema.

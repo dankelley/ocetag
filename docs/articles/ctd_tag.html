@@ -162,39 +162,53 @@ tag is saved, <em>not</em> the string value.</p>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; before adding ..., df is as follows</span></span>
 <span><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 10:54:23</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 11:18:15</span></span>
 <span><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
 <span><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 10:54:23    4.197</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 11:18:15    4.197</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/getTags.html">getTags</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713707663</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713709095</span></span></code></pre></div>
+<p>The database can be examined as follows</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/readDatabase.html">readDatabase</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; $mapping</span></span>
+<span><span class="co">#&gt;   value name</span></span>
+<span><span class="co">#&gt; 1     1  MLD</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $tags</span></span>
+<span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713709095</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $version</span></span>
+<span><span class="co">#&gt;   version</span></span>
+<span><span class="co">#&gt; 1       2</span></span></code></pre></div>
 <p>For readers who are familiar with SQL syntax, note that typing</p>
 <pre><code>echo .dump | sqlite3 dbname</code></pre>
 <p>in a unix terminal yields as follows.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>PRAGMA foreign_keys<span class="op">=</span><span class="kw">OFF</span>;</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="cf">BEGIN</span> <span class="kw">TRANSACTION</span>;</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `version` (</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  `version` <span class="dt">INTEGER</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>);</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> version <span class="kw">VALUES</span>(<span class="dv">2</span>);</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `mapping` (</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  `value` <span class="dt">INTEGER</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  `name` TEXT</span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>);</span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> mapping <span class="kw">VALUES</span>(<span class="dv">1</span>,<span class="st">'MLD'</span>);</span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `tags` (</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  `file` TEXT,</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  `index` <span class="dt">INT</span>,</span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  `pressure` <span class="dt">FLOAT</span>,</span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>  `tag` <span class="dt">INT</span>,</span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>  `analyst` TEXT,</span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>  `analysisTime` <span class="dt">TIMESTAMP</span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>);</span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tags <span class="kw">VALUES</span>(<span class="st">'ctd.cnv'</span>,<span class="dv">12</span>,<span class="fl">4.197000000000000063</span>,<span class="dv">1</span>,<span class="st">'Dan Kelley'</span>,<span class="dv">1713631216</span>);</span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>PRAGMA foreign_keys<span class="op">=</span><span class="kw">OFF</span>;</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="cf">BEGIN</span> <span class="kw">TRANSACTION</span>;</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `version` (</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  `version` <span class="dt">INTEGER</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>);</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> version <span class="kw">VALUES</span>(<span class="dv">2</span>);</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `mapping` (</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  `value` <span class="dt">INTEGER</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  `name` TEXT</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>);</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> mapping <span class="kw">VALUES</span>(<span class="dv">1</span>,<span class="st">'MLD'</span>);</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `tags` (</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  `file` TEXT,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  `index` <span class="dt">INT</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  `pressure` <span class="dt">FLOAT</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  `tag` <span class="dt">INT</span>,</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  `analyst` TEXT,</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  `analysisTime` <span class="dt">TIMESTAMP</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>);</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tags <span class="kw">VALUES</span>(<span class="st">'ctd.cnv'</span>,<span class="dv">12</span>,<span class="fl">4.197000000000000063</span>,<span class="dv">1</span>,<span class="st">'Dan Kelley'</span>,<span class="dv">1713631216</span>);</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

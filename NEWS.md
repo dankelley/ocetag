@@ -2,6 +2,8 @@
 
 * Database internal version changed from 1 to 2, and the `level`
   element of the `tags` table was renamed as `index`.
+* Add [readDatabase()], which may be handy for users who do not know
+  SQL.
 * Add [updateDatabase()], which updates existing databases to the
   present-day format.  All functions in the package that deal with the
   database call [updateDatabase()] at the start, as a way to ensure
