@@ -9,7 +9,7 @@ Authors@R: c(person(
             comment=c(ORCID="0000-0001-7808-5911")))
 Maintainer: Dan Kelley <dan.kelley@dal.ca>
 Description: Tools for tagging features in oceanographic datasets.
-Depends: R (>= 3.5.0), shiny, oce (>= 1.8-1), RSQLite
+Depends: gsw, R (>= 3.5.0), shiny, oce (>= 1.8-1), RSQLite
 Suggests: knitr, rmarkdown, testthat
 License: GPL (>= 3)
 Encoding: UTF-8

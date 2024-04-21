@@ -7,8 +7,8 @@
 
 eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
 
-requireNamespace("shiny")
-library(oce)
+library("oce")
+library("shiny")
 options(oceEOS = eos)
 
 debug <- 2
@@ -56,6 +56,9 @@ findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
         nearest <- which.min(d2)
     } else if (view == "sigma profile") {
         d2 <- (x - data$sigma0)^2 / dx2 + (y - data$yProfile)^2 / dy2
+        nearest <- which.min(d2)
+    } else if (view == "sigma-spiciness") {
+        d2 <- (x - data$sigma0)^2 / dx2 + (y - data$spiciness0)^2 / dy2
         nearest <- which.min(d2)
     } else if (view == "spiciness profile") {
         d2 <- (x - data$spiciness0)^2 / dx2 + (y - data$yProfile)^2 / dy2
@@ -106,6 +109,7 @@ default <- list(
     Tprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     Sprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     sigmaprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
+    sigmaspiciness= list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     spicinessprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     TS = list(cex = 0.7, col = 1, lwd = 1, pch = 1),
     highlight = list(cex = 3, col = "purple", lwd = 4, pch = 5),
@@ -125,7 +129,7 @@ default <- list(
 #' @importFrom graphics axis box mtext par text
 #'
 #' @importFrom utils head tail
-ctdTagUI <- fluidPage(
+ctdTagAppUI <- fluidPage(
     tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
     tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
     style = "background:#e6f3ff;cursor:crosshair;",
@@ -142,6 +146,7 @@ ctdTagUI <- fluidPage(
                     "S profile" = "S profile",
                     "spiciness profile" = "spiciness profile",
                     "sigma profile" = "sigma profile",
+                    "sigma-spiciness" = "sigma-spiciness",
                     "scan profile" = "scan profile",
                     "TS" = "TS"
                 ),
@@ -186,8 +191,11 @@ ctdTagUI <- fluidPage(
 )
 
 #' @importFrom oce as.ctd numberAsPOSIXct plotTS resizableLabel vectorShow
+#' @importFrom graphics contour grid
+#' @importFrom gsw gsw_spiciness0
 ## @importFrom DT renderDT
-ctdTagServer <- function(input, output, session) {
+ctdTagAppServer <- function(input, output, session) {
+    requireNamespace("gsw")
     path <- shiny::getShinyOption("path", default = ".")
     suffix <- shiny::getShinyOption("suffix", default = ".cnv")
     dbprefix <- shiny::getShinyOption("dbprefix", default = "~/ctdtag")
@@ -556,6 +564,42 @@ ctdTagServer <- function(input, output, session) {
                 mtext(state$data$ylab, side = 2, line = 1.5)
                 mtext(resizableLabel("sigma0"), side = 3, line = 1.5)
                 box()
+            } else if (input$view == "sigma-spiciness") {
+                par(mar = c(3, 3, 1, 1), mgp = c(1.9, 0.5, 0))
+                x <- state$data$sigma0[state$visible]
+                y <- state$data$spiciness0[state$visible]
+                with(
+                    default$sigmaspiciness,
+                    plot(x, y, asp = 1,
+                        ylim = rev(range(y)), xlab = "", ylab = "", type = input$plotType,
+                        axes = FALSE, yaxs = "r", cex = cex, col = col, lwd = lwd, pch = pch
+                    )
+                )
+                grid()
+                state$usr <<- par("usr")
+                if (!is.null(state$index)) {
+                    dmsg(debug, "sigma profile... ", vectorShow(state$index))
+                    with(
+                        default$focus,
+                        points(state$data$sigma0[state$index], state$data$spiciness0[state$index],
+                            cex = cex, col = col, lwd = lwd, pch = pch
+                        )
+                    )
+                }
+                tags <- getTags(state$fileWithPath, dbname = dbname, debug = debug - 1)
+                if (length(tags$tag) > 0) {
+                    with(
+                        default$tag,
+                        points(state$data$sigma0[tags$index], state$data$spiciness0[tags$index],
+                            cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
+                        )
+                    )
+                }
+                axis(side = 1)
+                axis(side = 2)
+                mtext(resizableLabel("spiciness0"), side = 1, line = 1.5)
+                mtext(resizableLabel("sigma0"), side = 2, line = 1.5)
+                box()
             } else if (input$view == "spiciness profile") {
                 par(mar = c(1, 3, 3, 1), mgp = c(1.9, 0.5, 0))
                 x <- state$data$spiciness0[state$visible]
@@ -637,6 +681,14 @@ ctdTagServer <- function(input, output, session) {
                 # within-plot buffer zone.  (I am not using xaxs="i" etc because
                 # it can put intrusions on the axis.)
                 plotTS(ctd, eos = eos, type = "n")
+                # add spiciness0 contours
+                usr <- par("usr")
+                n <- 100 # increase or decrease as appropriate
+                SAgrid <- seq(usr[1], usr[2], length.out = n)
+                CTgrid <- seq(usr[3], usr[4], length.out = n)
+                g <- expand.grid(SA = SAgrid, CT = CTgrid)
+                spiciness <- matrix(gsw_spiciness0(g$SA, g$CT), nrow = n)
+                contour(SAgrid, CTgrid, spiciness, lty = 2, labcex = 1, add = TRUE, col = 6)
                 dmsg(debug, "completed TS plot\n")
                 with(
                     default$TS,
@@ -740,5 +792,5 @@ ctdTagServer <- function(input, output, session) {
 #' @export
 ctdTagApp <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
     shinyOptions(path = path, suffix = suffix, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
-    shinyApp(ctdTagUI, ctdTagServer)
+    shinyApp(ctdTagAppUI, ctdTagAppServer)
 }
