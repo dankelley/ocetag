@@ -1,8 +1,11 @@
-#' Create a Database for Tagging
+#' Create or update a database of tags
 #'
-# This is a utility function, used by [ctdTag()] to set up a database
-# to hold tags established by clicking on CTD plots. If a database
-# of the provided name already exists, it is not altered.
+#' If the named file does not exist, it is created as an SQLite file,
+#' with tables that match the needs of other functions in the package.
+#' If it does exist, it is passed to [updateDatabase()] for possible
+#' updating to the present-day database schema (see the
+#' \sQuote{History of Changes} section of the documentation for
+#' [updateDatabase() for a listing of the changes).
 #'
 #' @template dbnameTemplate
 #'
@@ -10,8 +13,9 @@
 #' mapping from textual descriptions to numerical codes; see
 #' \sQuote{Examples}.
 #'
-#' @param tags an optional named vector (or a list) that specifies additional column names and
-#' types for the tag table.  The default set is
+#' @param tags an optional named vector (or a list) that specifies
+#' additional column names and types for the tag table.  The default
+#' set is
 #' `list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")`
 #' which is likely to be suitable for CTD data, with tags referenced
 #' to the depth at the stated index (starting with index 1, at the
@@ -35,11 +39,13 @@
 #'
 #' @section History of Changes:
 #'
-#' * On 2024-04-20, the database switched from storing `level` to
-#' storing `index`, which is a more neutral and inclusive term
-#' that might make more sense as we move from CTD datasets to other
-#' datasets.  This change can be recognized by the `version` value
-#' in the database, which changed fro 1 to 2 on this date.
+#' * **2024-04-20:** two changes were made to the database setup.
+#' First, the `version` element of the `version` table was changed
+#' from 1 to 2.  Second, the `level` element of the `tags` table was
+#' renamed as `index`.  Both changes are automatically handled by
+#' `createDatabase()`, which alters old files to the new format. All
+#' other functions of the package use the new format, so the system is
+#' backwards-compatible.
 #'
 #' @importFrom RSQLite dbConnect dbCreateTable dbDisconnect dbReadTable dbWriteTable SQLite
 #'
@@ -47,11 +53,15 @@
 #'
 #' @export
 createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0) {
+    version <- 2L # stored in the db (and checked in old dbs)
     if (!(is.character(dbname) && nchar(dbname) > 0L)) {
         stop("dbname must be a non-empty character value")
     }
     debug <- if (debug[1] > 0) 1L else 0L
-    if (!file.exists(dbname)) {
+    if (file.exists(dbname)) {
+        dmsg(debug, "Updating existing database\n")
+        updateDatabase(dbname, debug = debug)
+    } else {
         dmsg(debug, "Creating database file \"", dbname, "\"\n")
         if (missing(mapping)) {
             dmsg("using default mapping, common with CTD data\n")
@@ -69,7 +79,8 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         # tagsAll starts with a default
         tagsDefaultStart <- c(
             "file" = "TEXT",
-            "index" = "INT")
+            "index" = "INT"
+        )
         tagsDefaultEnd <- c(
             "tag" = "INT",
             "analyst" = "TEXT",
@@ -89,8 +100,8 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         # Version table
         if (debug) cat("about to create and write 'version' table\n")
         RSQLite::dbCreateTable(con, "version", c("version" = "INTEGER"))
-        # version 2: use 'index' instead of 'level'
-        RSQLite::dbWriteTable(con, "version", data.frame(version = 2L), overwrite = TRUE)
+        # NB version 1 used 'level' for what we now call 'index'
+        RSQLite::dbWriteTable(con, "version", data.frame(version = version), overwrite = TRUE)
         # Tag mapping
         if (debug) cat("about to create and write 'mapping' table\n")
         RSQLite::dbCreateTable(con, "mapping", c(value = "INT", meaning = "TEXT"))
@@ -110,8 +121,6 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         RSQLite::dbCreateTable(con, "tags", tags)
         dmsg(debug, "about to disconnect db\n")
         RSQLite::dbDisconnect(con)
-    } else {
-        dmsg(debug, "Using existing database file \"", dbname, "\"\n")
     }
     invisible(NULL)
 }

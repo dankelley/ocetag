@@ -1,7 +1,7 @@
-pandoc: '2.18'
+pandoc: 3.1.1
 pkgdown: 2.0.8
 pkgdown_sha: ~
 articles:
   ctd_tag: ctd_tag.html
-last_built: 2024-04-20T22:52Z
+last_built: 2024-04-21T13:54Z
 

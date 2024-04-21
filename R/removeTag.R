@@ -14,6 +14,7 @@
 #' @export
 removeTag <- function(file = NULL, index = NULL, dbname = NULL, debug = 0) {
     dmsg(debug, "removeTag(file=", file, ", index=", index, ", dbname=", dbname, "\n")
+    updateDatabase(dbname, debug = debug)
     con <- dbConnect(RSQLite::SQLite(), dbname)
     tags <- RSQLite::dbReadTable(con, "tags")
     remove <- which(tags$file == file & tags$index == index)

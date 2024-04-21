@@ -10,3 +10,5 @@ README_developer.md
 _pkgdown.yml
 ^vignettes/figure$
 ^vignettes/*.html$
+check_package.R
+^codemeta\.json$

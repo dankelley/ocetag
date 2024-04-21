@@ -1,0 +1,124 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "identifier": "ocetag",
+  "description": "Tools for tagging features in oceanographic datasets.",
+  "name": "ocetag: Tag Features on Oceanographic Datasets",
+  "codeRepository": "https://github.com/dankelley/ocetag",
+  "issueTracker": "https://github.com/dankelley/ocetag/issues",
+  "license": "https://spdx.org/licenses/GPL-3.0",
+  "version": "0.0.3",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "R",
+    "url": "https://r-project.org"
+  },
+  "runtimePlatform": "R version 4.4.0 alpha (2024-04-08 r86370)",
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Dan",
+      "familyName": "Kelley",
+      "email": "dan.kelley@dal.ca",
+      "@id": "https://orcid.org/0000-0001-7808-5911"
+    }
+  ],
+  "maintainer": [
+    {
+      "@type": "Person",
+      "givenName": "Dan",
+      "familyName": "Kelley",
+      "email": "dan.kelley@dal.ca",
+      "@id": "https://orcid.org/0000-0001-7808-5911"
+    }
+  ],
+  "softwareSuggestions": [
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "knitr",
+      "name": "knitr",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=knitr"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "rmarkdown",
+      "name": "rmarkdown",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=rmarkdown"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "identifier": "testthat",
+      "name": "testthat",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=testthat"
+    }
+  ],
+  "softwareRequirements": {
+    "1": {
+      "@type": "SoftwareApplication",
+      "identifier": "R",
+      "name": "R",
+      "version": ">= 3.5.0"
+    },
+    "2": {
+      "@type": "SoftwareApplication",
+      "identifier": "shiny",
+      "name": "shiny",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=shiny"
+    },
+    "3": {
+      "@type": "SoftwareApplication",
+      "identifier": "oce",
+      "name": "oce",
+      "version": ">= 1.8-1",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=oce"
+    },
+    "4": {
+      "@type": "SoftwareApplication",
+      "identifier": "RSQLite",
+      "name": "RSQLite",
+      "provider": {
+        "@id": "https://cran.r-project.org",
+        "@type": "Organization",
+        "name": "Comprehensive R Archive Network (CRAN)",
+        "url": "https://cran.r-project.org"
+      },
+      "sameAs": "https://CRAN.R-project.org/package=RSQLite"
+    },
+    "SystemRequirements": null
+  },
+  "fileSize": "139.21KB",
+  "relatedLink": "https://dankelley.github.io/ocetag/",
+  "releaseNotes": "https://github.com/dankelley/ocetag/blob/master/NEWS.md",
+  "readme": "https://github.com/dankelley/ocetag/blob/main/README.md",
+  "contIntegration": "https://github.com/dankelley/ocetag/actions/workflows/R-CMD-check.yaml"
+}

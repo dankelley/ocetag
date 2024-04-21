@@ -7,13 +7,14 @@
 #'
 #' @template debugTemplate
 #'
-#' @return [getTagMapping()] returns a data frame of tag value:meaning pairss.
+#' @return [getTagMapping()] returns a data frame of tag value:meaning pairs.
 #'
 #' @author Dan Kelley
 #'
 #' @export
 getTagMapping <- function(dbname = getDatabaseName(), debug = 0) {
     dmsg(debug, "getTagMapping(dbname=\"", dbname, "\"\n")
+    updateDatabase(dbname, debug = debug)
     rval <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)

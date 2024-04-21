@@ -698,13 +698,14 @@ ctdTagServer <- function(input, output, session) {
 
 #' Shiny App for Tagging CTD Features
 #'
-#' The tags are stored in a SQLite database, for ease of processing in R or other
-#' software systems.  The analyst's name and the time of analysis is stored along
-#' with each time stamp, to facilitate combining the judgements made by multiple
-#' analysts.  A SQLite database is used for this storage of tags.
+#' The tags are stored in a SQLite database, for ease of processing in
+#' R or other software systems.  The analyst's name and the time of
+#' analysis is stored along with each time stamp, to facilitate
+#' combining the judgements made by multiple analysts.  A SQLite
+#' database is used for this storage of tags.
 #'
 #' Instructions are provided with the Help button (or by typing `?`). Tagging
-#' information is stored in a sqlite3 database file, by default named
+#' information is stored in a SQLite database file, by default named
 #' `ctdtag_USERNAME.db`, where `USERNAME` is the login name of the analyst.
 #' If this file does not exist, it is created; otherwise, the existing
 #' tags (for the file undergoing analysis) are displayed on the plots,

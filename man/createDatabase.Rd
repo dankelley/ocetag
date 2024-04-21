@@ -2,7 +2,7 @@
 % Please edit documentation in R/createDatabase.R
 \name{createDatabase}
 \alias{createDatabase}
-\title{Create a Database for Tagging}
+\title{Create or update a database of tags}
 \usage{
 createDatabase(dbname = getDatabaseName(), mapping, tags, debug = 0)
 }
@@ -13,8 +13,9 @@ createDatabase(dbname = getDatabaseName(), mapping, tags, debug = 0)
 mapping from textual descriptions to numerical codes; see
 \sQuote{Examples}.}
 
-\item{tags}{an optional named vector (or a list) that specifies additional column names and
-types for the tag table.  The default set is
+\item{tags}{an optional named vector (or a list) that specifies
+additional column names and types for the tag table.  The default
+set is
 \code{list(file = "TEXT", index = "INT", tag = "INT", analyst = "TEXT", analysisTime = "TIMESTAMP")}
 which is likely to be suitable for CTD data, with tags referenced
 to the depth at the stated index (starting with index 1, at the
@@ -25,16 +26,23 @@ operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \description{
-Create a Database for Tagging
+If the named file does not exist, it is created as an SQLite file,
+with tables that match the needs of other functions in the package.
+If it does exist, it is passed to \code{\link[=updateDatabase]{updateDatabase()}} for possible
+updating to the present-day database schema (see the
+\sQuote{History of Changes} section of the documentation for
+[updateDatabase() for a listing of the changes).
 }
 \section{History of Changes}{
 
 \itemize{
-\item On 2024-04-20, the database switched from storing \code{level} to
-storing \code{index}, which is a more neutral and inclusive term
-that might make more sense as we move from CTD datasets to other
-datasets.  This change can be recognized by the \code{version} value
-in the database, which changed fro 1 to 2 on this date.
+\item \strong{2024-04-20:} two changes were made to the database setup.
+First, the \code{version} element of the \code{version} table was changed
+from 1 to 2.  Second, the \code{level} element of the \code{tags} table was
+renamed as \code{index}.  Both changes are automatically handled by
+\code{createDatabase()}, which alters old files to the new format. All
+other functions of the package use the new format, so the system is
+backwards-compatible.
 }
 }
 

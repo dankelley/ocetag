@@ -26,6 +26,7 @@
 #' @export
 getTags <- function(file = NULL, dbname = getDatabaseName(), debug = 0) {
     dmsg(debug, "getTags(file=\"", file, "\", dbname=\"", dbname, "\"\n")
+    updateDatabase(dbname, debug = debug)
     tags <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)

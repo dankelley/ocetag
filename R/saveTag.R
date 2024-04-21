@@ -39,9 +39,7 @@ saveTag <- function(file, index, ..., tag,
     if (!length(dots) && missing(index)) stop("must supply 'index' and/or '...'")
     if (missing(tag)) stop("must supply 'tag'")
     if (missing(dbname)) stop("must supply 'dbname'")
-    if (!(is.character(dbname) && nchar(dbname) > 0L)) {
-        stop("dbname must be a non-empty character value")
-    }
+    updateDatabase(dbname, debug = debug)
     debug <- if (debug[1] > 0) 1L else 0L
     dmsg(
         debug,
