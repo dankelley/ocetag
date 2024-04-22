@@ -53,7 +53,7 @@
 #'
 #' @export
 createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0) {
-    version <- 2L # stored in the db (and checked in old dbs)
+    version <- 3L # stored in the db (and checked in old dbs)
     if (!(is.character(dbname) && nchar(dbname) > 0L)) {
         stop("dbname must be a non-empty character value")
     }
@@ -107,18 +107,13 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         RSQLite::dbCreateTable(con, "mapping", c(value = "INT", meaning = "TEXT"))
         # Revise mapping as a data frame, for inclusion in db
         mapping <- data.frame(value = as.integer(mapping), name = names(mapping))
-        if (debug) {
-            cat("next is mapping used for tags\n")
-            print(mapping)
-        }
         RSQLite::dbWriteTable(con, "mapping", mapping, overwrite = TRUE)
         # Update 'tags', reform into a named vector, and then store in db
-        if (debug) {
-            cat("about to create and write 'tags' table\n")
-            cat("next is tags\n")
-            print(tags)
-        }
+        if (debug) cat("about to create and write 'tags' table\n")
         RSQLite::dbCreateTable(con, "tags", tags)
+        # Notes
+        dmsg(debug, "about to create 'notes' table\n")
+        RSQLite::dbCreateTable(con, "notes", c("file" = "TEXT", "index" = "INTEGER", "note" = "TEXT"))
         dmsg(debug, "about to disconnect db\n")
         RSQLite::dbDisconnect(con)
     }

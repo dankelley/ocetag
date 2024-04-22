@@ -25,7 +25,7 @@
 #'
 #' @export
 updateDatabase <- function(dbname = getDatabaseName(), debug = 0) {
-    version <- 2L
+    version <- 3L
     if (!(is.character(dbname) && nchar(dbname) > 0L)) {
         stop("dbname must be a non-empty character value")
     }
@@ -44,14 +44,16 @@ updateDatabase <- function(dbname = getDatabaseName(), debug = 0) {
     } else {
         dmsg(debug, "   ... up-to-date\n")
     }
+    tableNames <- RSQLite::dbListTables(con)
+    if (!"tags" %in% tableNames) {
+        stop("database lacks a 'tags' table")
+    }
+    if (!"notes" %in% tableNames) {
+        dmsg(debug, "Creating notes table\n")
+        RSQLite::dbCreateTable(con, "notes", c("file" = "TEXT", "index" = "INTEGER", "note" = "TEXT"))
+    }
     dmsg(debug, "Checking for tables named `version`, `mapping` and `tags`\n")
     tableNames <- RSQLite::dbListTables(con)
-    if (!all(c("version", "mapping", "tags") %in% tableNames)) {
-        RSQLite::dbDisconnect(con)
-        stop("Database does not contain tables `version`, `mapping` and `tags`")
-    } else {
-        dmsg(debug, "    ... all are present\n")
-    }
     dmsg(debug, "Checking names in 'tags' table\n")
     # rename tags$level as tags$index (if needed)
     tags <- RSQLite::dbReadTable(con, "tags")

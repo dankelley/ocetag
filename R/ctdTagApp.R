@@ -28,8 +28,10 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <ul>
 <li> <b>i</b> zoom in (narrow the 'index' range) near the mouse</li>
 <li> <b>o</b> zoom out (widen the 'index' range)</li>
-<li> <b>O</b> (upper-case 'o') zoom all the way out</li>
+<li> <b>=</b> reset plot to full scale</li>
 <li> <b>j</b> move down in water column</li>
+<li> <b>n</b> add a note for the highlighted point, if it is visible in the present view</li>
+<li> <b>N</b> add a note for this CTD file</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
 <li><i>Tagging</i></li>
@@ -109,7 +111,7 @@ default <- list(
     Tprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     Sprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     sigmaprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
-    sigmaspiciness= list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
+    sigmaspiciness = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     spicinessprofile = list(cex = 0.7, col = "#333333A0", lwd = 1, pch = 1),
     TS = list(cex = 0.7, col = 1, lwd = 1, pch = 1),
     highlight = list(cex = 3, col = "purple", lwd = 4, pch = 5),
@@ -131,7 +133,12 @@ default <- list(
 #' @importFrom utils head tail
 ctdTagAppUI <- fluidPage(
     tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
-    tags$script('$(document).on("keypress", function (e) { Shiny.onInputChange("keypress", e.which); Shiny.onInputChange("keypressTrigger", Math.random()); });'),
+    tags$script(paste0(
+        "$(document).on(\"keypress\", function (e) {",
+        "Shiny.onInputChange(\"keypress\", e.which);",
+        "Shiny.onInputChange(\"keypressTrigger\", Math.random());",
+        "});"
+    )),
     style = "background:#e6f3ff;cursor:crosshair;",
     wellPanel(
         fluidRow(
@@ -209,6 +216,7 @@ ctdTagAppServer <- function(input, output, session) {
     # that displays the app. Note that 'step' is used when one R element needs
     # to tell other elements that a change has happened.
     state <- reactiveValues(
+        ignoreKeystrokes = FALSE,
         step = 0L,
         analyst = getUserName(),
         file = NULL, # set by observeEvent(input$fileSelect)
@@ -253,6 +261,9 @@ ctdTagAppServer <- function(input, output, session) {
     })
 
     observeEvent(input$keypressTrigger, {
+        if (state$ignoreKeystrokes) {
+            return()
+        }
         key <- intToUtf8(input$keypress)
         # dmsg(debug, key, "\n")
         if (key %in% as.character(0:9)) {
@@ -294,8 +305,8 @@ ctdTagAppServer <- function(input, output, session) {
             span <- diff(limits)
             limits <- limitsTrim(limits + c(-span, span), state$ndata)
             state$visible <- limitsToVisible(limits, state$ndata)
-        } else if (key == "O") {
-            dmsg(debug, "responding to 'O': view full-scale\n")
+        } else if (key == "=") {
+            dmsg(debug, "responding to '=': view full-scale\n")
             state$visible <- rep(TRUE, state$ndata)
         } else if (key == "j") {
             dmsg(debug, "responding to 'j': move down in water column\n")
@@ -313,6 +324,18 @@ ctdTagAppServer <- function(input, output, session) {
                 limits <- limitsTrim(limits - (2 / 3) * span, state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
             }
+        } else if (key == "n") {
+            dmsg(debug, "responding to 'n': make a note on a highlighted (and visible) point\n")
+            dmsg(debug, oce::vectorShow(state$visible[state$index]))
+            dmsg(debug, oce::vectorShow(state$index))
+            if (is.null(state$index) || !state$visible[state$index]) {
+                showNotification("No visible points have been highlighted. Either adjust the view to show a highlighted point, or click a point, or use 'N' instead of 'n'.")
+            } else {
+                showNotification("FIXME: add a note for the highlighted point.")
+            }
+        } else if (key == "N") {
+            showModal(noteModal())
+            showNotification("FIXME: handle 'N' for notes on file")
         } else if (key == "x") {
             dmsg(debug, "responding to 'x' to remove tag\n")
             if (focusIsTagged()) {
@@ -329,6 +352,41 @@ ctdTagAppServer <- function(input, output, session) {
                 size = "xl", shiny::HTML(overallHelp), easyClose = TRUE
             ))
         }
+    })
+
+    noteModal <- function(message = "") {
+        # FIXME: how to avoid keystrokes being captured by the keystroke UI?
+        state$ignoreKeystrokes <<- TRUE
+        modalDialog(
+            textInput("note", message, placeholder = "note"),
+            footer = tagList(
+                modalButton("Cancel"),
+                actionButton("noteOK", "OK")
+            )
+        )
+    }
+
+    observeEvent(input$noteOK, {
+        con <- dbConnect(RSQLite::SQLite(), dbname)
+        if (RSQLite::dbExistsTable(con, "notes")) {
+            msg <- paste0(
+                "FIXME: save note \"", input$note,
+                "\" for file \"", state$file, "\" at index ",
+                if (is.null(state$index)) 0 else state$index
+            )
+            showNotification(msg)
+            index <- if (is.null(state$index)) 0 else state$index
+            dbWriteTable(con, "notes",
+                data.frame(file = state$file, index = index, note = input$note),
+                append = TRUE
+            )
+            dmsg(debug, msg)
+        } else {
+            showNotification("ERROR: database has no 'notes' table")
+        }
+        RSQLite::dbDisconnect(con)
+        state$ignoreKeystrokes <<- FALSE
+        removeModal()
     })
 
     observeEvent(input$yProfile, {
@@ -355,10 +413,10 @@ ctdTagAppServer <- function(input, output, session) {
             stop(msg)
         }
         state$file <<- input$fileSelect
-        #message(oce::vectorShow(path))
-        #message(oce::vectorShow(state$file))
+        # message(oce::vectorShow(path))
+        # message(oce::vectorShow(state$file))
         state$fileWithPath <<- normalizePath(paste0(path, "/", input$fileSelect))
-        #message(oce::vectorShow(state$fileWithPath))
+        # message(oce::vectorShow(state$fileWithPath))
         ctd <- oce::read.oce(state$fileWithPath)
         if (is.na(ctd[["latitude"]])) {
             ctd <- oceSetMetadata(ctd, "latitude", 45)
@@ -578,7 +636,8 @@ ctdTagAppServer <- function(input, output, session) {
                 y <- state$data$spiciness0[state$visible]
                 with(
                     default$sigmaspiciness,
-                    plot(x, y, asp = 1,
+                    plot(x, y,
+                        asp = 1,
                         ylim = rev(range(y)), xlab = "", ylab = "", type = input$plotType,
                         axes = FALSE, yaxs = "r", cex = cex, col = col, lwd = lwd, pch = pch
                     )
@@ -748,7 +807,7 @@ ctdTagAppServer <- function(input, output, session) {
                 # } else {
                 table <- tags[, c("index", "pressure", "tag", "analyst", "analysisTime")]
                 table$analysisTime <- format(as.POSIXct(table$analysisTime))
-                #print(table)
+                # print(table)
                 renderTable(table)
                 # }
             }
