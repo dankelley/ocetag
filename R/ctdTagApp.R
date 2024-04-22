@@ -30,8 +30,8 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <li> <b>o</b> zoom out (widen the 'index' range)</li>
 <li> <b>=</b> reset plot to full scale</li>
 <li> <b>j</b> move down in water column</li>
-<li> <b>n</b> add a note for the highlighted point, if it is visible in the present view</li>
-<li> <b>N</b> add a note for this CTD file</li>
+<li> REMOVED <b>n</b> add a note for the highlighted point, if it is visible in the present view</li>
+<li> <b>N</b> add a note for whole CTD file or, if there is a visible focus, for that index value</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
 <li><i>Tagging</i></li>
@@ -190,9 +190,15 @@ ctdTagAppUI <- fluidPage(
         )
     ),
     wellPanel(
-        uiOutput("databaseHeader"),
+        uiOutput("tagDisplayHeader"),
         fluidRow(
-            column(12, uiOutput("databasePanel"))
+            column(12, uiOutput("tagDisplayPanel"))
+        )
+    ),
+    wellPanel(
+        uiOutput("noteDisplayHeader"),
+        fluidRow(
+            column(12, uiOutput("noteDisplayPanel"))
         )
     )
 )
@@ -246,7 +252,9 @@ ctdTagAppServer <- function(input, output, session) {
     observeEvent(input$help, {
         shiny::showModal(shiny::modalDialog(
             title = NULL,
-            size = "xl", shiny::HTML(overallHelp), easyClose = TRUE
+            size = "xl",
+            shiny::HTML(overallHelp),
+            easyClose = TRUE
         ))
     })
 
@@ -324,18 +332,17 @@ ctdTagAppServer <- function(input, output, session) {
                 limits <- limitsTrim(limits - (2 / 3) * span, state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
             }
-        } else if (key == "n") {
-            dmsg(debug, "responding to 'n': make a note on a highlighted (and visible) point\n")
-            dmsg(debug, oce::vectorShow(state$visible[state$index]))
-            dmsg(debug, oce::vectorShow(state$index))
-            if (is.null(state$index) || !state$visible[state$index]) {
-                showNotification("No visible points have been highlighted. Either adjust the view to show a highlighted point, or click a point, or use 'N' instead of 'n'.")
-            } else {
-                showNotification("FIXME: add a note for the highlighted point.")
-            }
+        #} else if (key == "n") {
+        #    dmsg(debug, "responding to 'n': make a note on a highlighted (and visible) point\n")
+        #    dmsg(debug, oce::vectorShow(state$visible[state$index]))
+        #    dmsg(debug, oce::vectorShow(state$index))
+        #    if (is.null(state$index) || !state$visible[state$index]) {
+        #        showNotification("No visible points have been highlighted. Either adjust the view to show a highlighted point, or click a point, or use 'N' instead of 'n'.")
+        #    } else {
+        #        showNotification("FIXME: add a note for the highlighted point.")
+        #    }
         } else if (key == "N") {
             showModal(noteModal())
-            showNotification("FIXME: handle 'N' for notes on file")
         } else if (key == "x") {
             dmsg(debug, "responding to 'x' to remove tag\n")
             if (focusIsTagged()) {
@@ -349,16 +356,29 @@ ctdTagAppServer <- function(input, output, session) {
         } else if (key == "?") {
             shiny::showModal(shiny::modalDialog(
                 title = NULL,
-                size = "xl", shiny::HTML(overallHelp), easyClose = TRUE
+                size = "xl",
+                shiny::HTML(overallHelp),
+                easyClose = TRUE
             ))
         }
     })
 
     noteModal <- function(message = "") {
-        # FIXME: how to avoid keystrokes being captured by the keystroke UI?
         state$ignoreKeystrokes <<- TRUE
+        con <- dbConnect(RSQLite::SQLite(), dbname)
+        notes <- dbReadTable(con, "notes")
+        placeholder <- "Please write notes here."
+        if (RSQLite::dbExistsTable(con, "notes")) {
+            index <- as.integer(if (is.null(state$index)) 0 else state$index)
+            look <- notes$file == state$file & notes$index == index
+            if (length(look) > 0) {
+                placeholder <- paste(notes[look, "note"], collapse = "/")
+            }
+        }
+        RSQLite::dbDisconnect(con)
         modalDialog(
-            textInput("note", message, placeholder = "note"),
+            textInput("note", message, placeholder = placeholder),
+            size = "xl",
             footer = tagList(
                 modalButton("Cancel"),
                 actionButton("noteOK", "OK")
@@ -369,18 +389,30 @@ ctdTagAppServer <- function(input, output, session) {
     observeEvent(input$noteOK, {
         con <- dbConnect(RSQLite::SQLite(), dbname)
         if (RSQLite::dbExistsTable(con, "notes")) {
+            state$step <<- state$step + 1 # other shiny elements notice this
             msg <- paste0(
                 "FIXME: save note \"", input$note,
                 "\" for file \"", state$file, "\" at index ",
                 if (is.null(state$index)) 0 else state$index
             )
-            showNotification(msg)
-            index <- if (is.null(state$index)) 0 else state$index
-            dbWriteTable(con, "notes",
-                data.frame(file = state$file, index = index, note = input$note),
-                append = TRUE
-            )
-            dmsg(debug, msg)
+            dmsg(1, msg, "\n")
+            # showNotification(msg)
+            notes <- dbReadTable(con, "notes")
+            index <- as.integer(if (is.null(state$index)) 0 else state$index)
+            look <- notes$file == state$file & notes$index == index
+            dmsg(1 + debug, "look=", look, "\n")
+            if (length(look) == 0) {
+                dmsg(1 + debug, "adding new note for file=\"", state$file, "\" at index=", index, "\n")
+                dbWriteTable(con, "notes",
+                    data.frame(file = state$file, index = index, note = input$note),
+                    append = TRUE
+                )
+            } else {
+                # FIXME: consider the value of 'index'
+                dmsg(1 + debug, "updating note for file=\"", state$file, "\" at index=", index, "\n")
+                notes[look, "note"] <- input$note
+                dbWriteTable(con, "notes", notes, overwrite = TRUE)
+            }
         } else {
             showNotification("ERROR: database has no 'notes' table")
         }
@@ -492,7 +524,7 @@ ctdTagAppServer <- function(input, output, session) {
         paste0("Database \"", dbname, "\" ", tagMsg) # , " ", focusMsg)
     })
 
-    output$databaseHeader <- renderText({
+    output$tagDisplayHeader <- renderText({
         if (!is.null(state$fileWithPath)) {
             tm <- getTagMapping(dbname = dbname, debug = debug - 1L)
             msg <- "<p>"
@@ -509,6 +541,12 @@ ctdTagAppServer <- function(input, output, session) {
             }
             msg <- paste0(msg, paste0("Tags for CTD file \"", state$fileWithPath, "\""), "</p>")
             msg
+        }
+    })
+
+    output$noteDisplayHeader <- renderText({
+        if (!is.null(state$fileWithPath)) {
+            "Notes:"
         }
     })
 
@@ -791,7 +829,7 @@ ctdTagAppServer <- function(input, output, session) {
         pointsize = 14
     )
 
-    output$databasePanel <- renderUI({
+    output$tagDisplayPanel <- renderUI({
         state$step # to cause shiny to update this
         if (!is.null(state$fileWithPath)) {
             # Show file, pressure, tag, analyst, and analysis time
@@ -810,6 +848,19 @@ ctdTagAppServer <- function(input, output, session) {
                 # print(table)
                 renderTable(table)
                 # }
+            }
+        }
+    })
+
+    output$noteDisplayPanel <- renderUI({
+        state$step # to cause shiny to update this
+        if (!is.null(state$fileWithPath)) {
+            con <- dbConnect(RSQLite::SQLite(), dbname)
+            notes <- dbReadTable(con, "notes")
+            dbDisconnect(con)
+            look <- notes$file == state$file
+            if (length(look) > 0) {
+                renderTable(notes[look, ])
             }
         }
     })

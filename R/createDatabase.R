@@ -79,10 +79,10 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         # tagsAll starts with a default
         tagsDefaultStart <- c(
             "file" = "TEXT",
-            "index" = "INT"
+            "index" = "INTEGER"
         )
         tagsDefaultEnd <- c(
-            "tag" = "INT",
+            "tag" = "INTEGER",
             "analyst" = "TEXT",
             "analysisTime" = "TIMESTAMP"
         )
@@ -104,7 +104,7 @@ createDatabase <- function(dbname = getDatabaseName(), mapping, tags, debug = 0)
         RSQLite::dbWriteTable(con, "version", data.frame(version = version), overwrite = TRUE)
         # Tag mapping
         if (debug) cat("about to create and write 'mapping' table\n")
-        RSQLite::dbCreateTable(con, "mapping", c(value = "INT", meaning = "TEXT"))
+        RSQLite::dbCreateTable(con, "mapping", c(value = "INTEGER", meaning = "TEXT"))
         # Revise mapping as a data frame, for inclusion in db
         mapping <- data.frame(value = as.integer(mapping), name = names(mapping))
         RSQLite::dbWriteTable(con, "mapping", mapping, overwrite = TRUE)
