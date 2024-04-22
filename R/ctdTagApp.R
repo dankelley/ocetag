@@ -370,7 +370,7 @@ ctdTagAppServer <- function(input, output, session) {
         placeholder <- "Please write notes here."
         if (RSQLite::dbExistsTable(con, "notes")) {
             index <- as.integer(if (is.null(state$index)) 0 else state$index)
-            look <- notes$file == state$file & notes$index == index
+            look <- which(notes$file == state$file & notes$index == index)
             if (length(look) > 0) {
                 placeholder <- paste(notes[look, "note"], collapse = "/")
             }
@@ -399,7 +399,7 @@ ctdTagAppServer <- function(input, output, session) {
             # showNotification(msg)
             notes <- dbReadTable(con, "notes")
             index <- as.integer(if (is.null(state$index)) 0 else state$index)
-            look <- notes$file == state$file & notes$index == index
+            look <- which(notes$file == state$file & notes$index == index)
             dmsg(1 + debug, "look=", look, "\n")
             if (length(look) == 0) {
                 dmsg(1 + debug, "adding new note for file=\"", state$file, "\" at index=", index, "\n")
