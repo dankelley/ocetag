@@ -306,17 +306,23 @@ ctdTagAppServer <- function(input, output, session) {
                 }
             }
         } else if (key == "i") {
-            if (!is.null(input$hover$x)) {
-                dmsg(debug, "responding to 'i': zoom in\n")
+            # dmsg(1 + debug, "FIRST responding to 'i': zoom in\n")
+            dmsg(debug, "responding to 'i'\n")
+            if (is.null(input$hover$x)) {
+                showNotification("Click in the plot region to make 'i' work")
+            } else {
+                dmsg(debug, "responding to 'i': zoom in (input$hover$x=", input$hover$x, ")\n")
                 nearestIndex <- findNearestIndex(
                     input$hover$x, input$hover$y, state$usr,
                     state$data, input$view
                 )
-                span <- sum(state$visible)
-                if (span > default$focus$minimumSpan) {
-                    span <- span / 4
-                    limits <- limitsTrim(nearestIndex + c(-span / 2, span / 2), state$ndata)
-                    state$visible <- limitsToVisible(limits, state$ndata)
+                if (is.finite(nearestIndex)) {
+                    span <- sum(state$visible)
+                    if (span > default$focus$minimumSpan) {
+                        span <- span / 4
+                        limits <- limitsTrim(nearestIndex + c(-span / 2, span / 2), state$ndata)
+                        state$visible <- limitsToVisible(limits, state$ndata)
+                    }
                 }
             }
         } else if (key == "o") {
@@ -686,7 +692,7 @@ ctdTagAppServer <- function(input, output, session) {
                     dmsg(debug, "sigma profile... ", vectorShow(state$index))
                     with(
                         default$focus,
-                        points(state$data$sigma0[state$index], state$data$spiciness0[state$index],
+                        points(state$data$spiciness0[state$index], state$data$sigma0[state$index],
                             cex = cex, col = col, lwd = lwd, pch = pch
                         )
                     )
@@ -695,7 +701,7 @@ ctdTagAppServer <- function(input, output, session) {
                 if (length(tags$tag) > 0) {
                     with(
                         default$tag,
-                        points(state$data$sigma0[tags$index], state$data$spiciness0[tags$index],
+                        points(state$data$spiciness0[tags$index], state$data$sigma0[tags$index],
                             cex = cex, pch = pch, lwd = lwd, col = 1 + tags$tag
                         )
                     )
