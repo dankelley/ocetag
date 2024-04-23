@@ -133,7 +133,7 @@ default <- list(
 )
 
 #' @importFrom shiny actionButton br brushOpts column fluidPage
-#' fluidRow getShinyOption modalButton modalDialog observeEvent
+#' fluidRow getShinyOption HTML modalButton modalDialog observeEvent
 #' plotOutput reactiveValues removeModal renderPlot renderTable
 #' renderText renderUI selectInput showNotification shinyApp
 #' shinyOptions showModal stopApp stopApp tagList textInput uiOutput
