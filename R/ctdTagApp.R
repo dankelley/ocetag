@@ -222,6 +222,7 @@ ctdTagAppServer <- function(input, output, session) {
     requireNamespace("gsw")
     path <- shiny::getShinyOption("path", default = ".")
     suffix <- shiny::getShinyOption("suffix", default = ".cnv")
+    singleFile <- shiny::getShinyOption("file", default = NULL)
     dbprefix <- shiny::getShinyOption("dbprefix", default = "~/ctdtag")
     mapping <- shiny::getShinyOption("mapping", default = list())
     plotHeight <- shiny::getShinyOption("plotHeight", default = 200)
@@ -428,7 +429,11 @@ ctdTagAppServer <- function(input, output, session) {
     })
 
     output$fileSelect <- renderUI({
-        availableFiles <- list.files(path, paste0(suffix, "$"), ignore.case = TRUE)
+        if (is.null(singleFile)) {
+            availableFiles <- list.files(path, paste0(suffix, "$"), ignore.case = TRUE)
+        } else {
+            availableFiles <- singleFile
+        }
         selectInput("fileSelect", label = NULL, choices = availableFiles, selected = availableFiles[1])
     })
 
@@ -879,31 +884,38 @@ ctdTagAppServer <- function(input, output, session) {
 #' @param path character value naming the directory in which to search
 #' for CTD files.
 #'
-#' @param mapping a list that connects numerical tag codes to character values
-#' indicating their meaning.  For example, `list("mixed-layer depth"=0)`
-#' might be used in a study of mixed-layer depths.  By default, mappings
-#' get set in a simple way, with numerical value 0 mapping to string `"0"`,
-#' etc. The value of `mapping` is *only* used in creating a new database.  After that, its
-#' value will be ignored if supplied, to avoid the confusion that would arise
-#' with multiple intended mappings.  The mapping is
-#' stored in the database as a table named `tagMapping`, the contents of
+#' @param suffix character value indicating the file suffix that is
+#' taken to indicate CTD files.  This is interpreted in a
+#' case-independent manner, so the default value of `"cnv"` would
+#' match both `"station1.cnv"` and `"STATION2.CNV"`.
+#'
+#' @param file character value that names a file. If this is given,
+#' then the values of `path` and `suffix` are ignored, and
+#' the app focusses on this one file alone.
+#'
+#' @param dbprefix character value for the start of the name of the
+#' database file.
+#'
+#' @param mapping a list that connects numerical tag codes to
+#' character values indicating their meaning.  For example,
+#' `list("mixed-layer depth"=0)` might be used in a study of
+#' mixed-layer depths.  By default, mappings get set in a simple way,
+#' with numerical value 0 mapping to string `"0"`, etc. The value of
+#' `mapping` is *only* used in creating a new database.  After that,
+#' its value will be ignored if supplied, to avoid the confusion that
+#' would arise with multiple intended mappings.  The mapping is stored
+#' in the database as a table named `tagMapping`, the contents of
 #' which are displayed in the table that appears below the plot.
 #'
-#' @param suffix character value indicating the file suffix that
-#' is taken to indicate CTD files.  This is interpreted in a case-independent
-#' manner, so the default value of `"cnv"` would match both `"station1.cnv"`
-#' and `"STATION2.CNV"`.
-#'
-#' @param dbprefix character value for the start of the name of the database file.
-#'
-#' @param plotHeight numeric value for the height of the plot, in pixels.
+#' @param plotHeight numeric value for the height of the plot, in
+#' pixels.
 #'
 #' @template debugTemplate
 #'
 #' @author Dan Kelley
 #'
 #' @export
-ctdTagApp <- function(path = ".", suffix = "cnv", dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
-    shinyOptions(path = path, suffix = suffix, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
+ctdTagApp <- function(path = ".", suffix = "cnv", file = NULL, dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
+    shinyOptions(path = path, suffix = suffix, file = file, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
     shinyApp(ctdTagAppUI, ctdTagAppServer)
 }

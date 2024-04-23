@@ -7,6 +7,7 @@
 ctdTagApp(
   path = ".",
   suffix = "cnv",
+  file = NULL,
   dbprefix = "~/ctdtag",
   mapping = list(),
   plotHeight = 500,
@@ -17,24 +18,31 @@ ctdTagApp(
 \item{path}{character value naming the directory in which to search
 for CTD files.}
 
-\item{suffix}{character value indicating the file suffix that
-is taken to indicate CTD files.  This is interpreted in a case-independent
-manner, so the default value of \code{"cnv"} would match both \code{"station1.cnv"}
-and \code{"STATION2.CNV"}.}
+\item{suffix}{character value indicating the file suffix that is
+taken to indicate CTD files.  This is interpreted in a
+case-independent manner, so the default value of \code{"cnv"} would
+match both \code{"station1.cnv"} and \code{"STATION2.CNV"}.}
 
-\item{dbprefix}{character value for the start of the name of the database file.}
+\item{file}{character value that names a file. If this is given,
+then the values of \code{path} and \code{suffix} are ignored, and
+the app focusses on this one file alone.}
 
-\item{mapping}{a list that connects numerical tag codes to character values
-indicating their meaning.  For example, \code{list("mixed-layer depth"=0)}
-might be used in a study of mixed-layer depths.  By default, mappings
-get set in a simple way, with numerical value 0 mapping to string \code{"0"},
-etc. The value of \code{mapping} is \emph{only} used in creating a new database.  After that, its
-value will be ignored if supplied, to avoid the confusion that would arise
-with multiple intended mappings.  The mapping is
-stored in the database as a table named \code{tagMapping}, the contents of
+\item{dbprefix}{character value for the start of the name of the
+database file.}
+
+\item{mapping}{a list that connects numerical tag codes to
+character values indicating their meaning.  For example,
+\code{list("mixed-layer depth"=0)} might be used in a study of
+mixed-layer depths.  By default, mappings get set in a simple way,
+with numerical value 0 mapping to string \code{"0"}, etc. The value of
+\code{mapping} is \emph{only} used in creating a new database.  After that,
+its value will be ignored if supplied, to avoid the confusion that
+would arise with multiple intended mappings.  The mapping is stored
+in the database as a table named \code{tagMapping}, the contents of
 which are displayed in the table that appears below the plot.}
 
-\item{plotHeight}{numeric value for the height of the plot, in pixels.}
+\item{plotHeight}{numeric value for the height of the plot, in
+pixels.}
 
 \item{debug}{integer value indicating a debugging level.  Use 0 for silent
 operation, or any integer exceeding 1 to show some output during the action
