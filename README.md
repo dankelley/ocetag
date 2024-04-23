@@ -5,21 +5,29 @@
 
 <!-- badges: end -->
 
-This package provides e suite of functions for organizing information about
-oceanographic data that are in the form of tags referenced to data features.
-There is great flexibility in the nature of those tags.  For example, in
-working with CTD data, an analyst might want to employ tags as used by the Argo
-program, as a way to indicate untrustworthy data. Another example might involve
-tags referring to features of interest, such as the mixed-layer depth or some
-feature in temperature-salinity space.
+The `ocetag` package provides e suite of functions for organizing information
+about oceanographic data that are in the form of tags referenced to data
+features. There is great flexibility in the nature of those tags.  For example,
+in working with CTD data, an analyst might want to employ tags as used by the
+Argo program, as a way to indicate untrustworthy data. Another example might
+involve tags referring to features of interest, such as the mixed-layer depth
+or some feature in temperature-salinity space.
 
 The tags are stored in an SQLite database, for speed and efficiency. Another
 advantage of the format over simpler formats is that altering the files takes
 some effort, so changes are unlikely to come from someone double-clicking on
 the file and accidentally changing the contents.
 
-The package offers low-level functions, such as `createDatabase()` and `saveTag()`,
-as well as a high-level Shiny app named `ctdTagApp()` that lets the analyst explore
-CTD data in flexible ways, to discover and tag features of interest.
+The package offers low-level functions, such as `createDatabase()` and
+`saveTag()`, as well as a high-level Shiny app named `ctdTagApp()` that lets
+the analyst explore CTD data in flexible ways, to discover and tag features of
+interest.
+
+To install the package, type the following in an R session
+
+    remotes::install_github("dankelley/ocetag", ref = "main")
+
+Note that you will need to type `install.packages("remotes)` first, if you
+don't have the `remotes` package on your system.
 
 

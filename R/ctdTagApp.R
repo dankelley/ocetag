@@ -13,12 +13,18 @@ options(oceEOS = eos)
 
 debug <- 2
 
-helpMouse <- "<p><i>Mouse</i></p>
+helpApp <- "<p style=\"font-size: 150%; text-align: center;\">Instructions for <tt>ocetag::ctdTagApp()</tt></p>"
+
+helpInstallation <- "<p><b>Installation</b></p>
+<pre>    remotes::install_github(\"dankelley/ocetag\", ref = \"main\")</pre>
+"
+
+helpMouse <- "<p><b>Mouse</b></p>
 <ul>
 <li>Click near curve to choose a focus point (drawn with a cross).</li>
 </ul>"
 
-helpKeyboard <- "<p><i>Keyboard</i></p>
+helpKeyboard <- "<p><b>Keyboard</b></p>
 <ul>
 <li> <i>Application Control</i></p></li>
 <ul>
@@ -30,8 +36,6 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <li> <b>o</b> zoom out (widen the 'index' range)</li>
 <li> <b>=</b> reset plot to full scale</li>
 <li> <b>j</b> move down in water column</li>
-<li> REMOVED <b>n</b> add a note for the highlighted point, if it is visible in the present view</li>
-<li> <b>N</b> add a note for whole CTD file or, if there is a visible focus, for that index value</li>
 <li> <b>k</b> move up in water column</li>
 </ul>
 <li><i>Tagging</i></li>
@@ -40,10 +44,14 @@ helpKeyboard <- "<p><i>Keyboard</i></p>
 <li> <b>u</b> remove focus on last-clicked point</li>
 <li> <b>x</b> delete the tag on the focus point (if there is one)</li>
 </ul>
+<li><i>Adding Notes</i></li>
+<ul>
+<li> <b>n</b> add a note for whole CTD file or, if there is a visible focus, for that index value</li>
+</ul>
 </ul>
 "
 
-overallHelp <- c(helpMouse, helpKeyboard)
+overallHelp <- c(helpApp, helpInstallation, helpMouse, helpKeyboard)
 
 findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
     dmsg(debug, "findNearestIndex(", x, ",", y, "..., view=", view, ")\n")
@@ -332,16 +340,7 @@ ctdTagAppServer <- function(input, output, session) {
                 limits <- limitsTrim(limits - (2 / 3) * span, state$ndata)
                 state$visible <- limitsToVisible(limits, state$ndata)
             }
-        #} else if (key == "n") {
-        #    dmsg(debug, "responding to 'n': make a note on a highlighted (and visible) point\n")
-        #    dmsg(debug, oce::vectorShow(state$visible[state$index]))
-        #    dmsg(debug, oce::vectorShow(state$index))
-        #    if (is.null(state$index) || !state$visible[state$index]) {
-        #        showNotification("No visible points have been highlighted. Either adjust the view to show a highlighted point, or click a point, or use 'N' instead of 'n'.")
-        #    } else {
-        #        showNotification("FIXME: add a note for the highlighted point.")
-        #    }
-        } else if (key == "N") {
+        } else if (key == "n") {
             showModal(noteModal())
         } else if (key == "x") {
             dmsg(debug, "responding to 'x' to remove tag\n")
@@ -390,26 +389,26 @@ ctdTagAppServer <- function(input, output, session) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
         if (RSQLite::dbExistsTable(con, "notes")) {
             state$step <<- state$step + 1 # other shiny elements notice this
-            msg <- paste0(
-                "FIXME: save note \"", input$note,
-                "\" for file \"", state$file, "\" at index ",
-                if (is.null(state$index)) 0 else state$index
-            )
-            dmsg(1, msg, "\n")
+            # msg <- paste0(
+            #    "FIXME: save note \"", input$note,
+            #    "\" for file \"", state$file, "\" at index ",
+            #    if (is.null(state$index)) 0 else state$index
+            # )
+            # dmsg(1, msg, "\n")
             # showNotification(msg)
             notes <- dbReadTable(con, "notes")
             index <- as.integer(if (is.null(state$index)) 0 else state$index)
             look <- which(notes$file == state$file & notes$index == index)
-            dmsg(1 + debug, "look=", look, "\n")
+            dmsg(debug, "look=", look, "\n")
             if (length(look) == 0) {
-                dmsg(1 + debug, "adding new note for file=\"", state$file, "\" at index=", index, "\n")
+                dmsg(debug, "adding new note for file=\"", state$file, "\" at index=", index, "\n")
                 dbWriteTable(con, "notes",
                     data.frame(file = state$file, index = index, note = input$note),
                     append = TRUE
                 )
             } else {
                 # FIXME: consider the value of 'index'
-                dmsg(1 + debug, "updating note for file=\"", state$file, "\" at index=", index, "\n")
+                dmsg(debug, "updating note for file=\"", state$file, "\" at index=", index, "\n")
                 notes[look, "note"] <- input$note
                 dbWriteTable(con, "notes", notes, overwrite = TRUE)
             }
