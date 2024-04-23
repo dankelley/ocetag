@@ -68,7 +68,7 @@ findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
         d2 <- (x - data$sigma0)^2 / dx2 + (y - data$yProfile)^2 / dy2
         nearest <- which.min(d2)
     } else if (view == "sigma-spiciness") {
-        d2 <- (x - data$sigma0)^2 / dx2 + (y - data$spiciness0)^2 / dy2
+        d2 <- (x - data$spiciness0)^2 / dx2 + (y - data$sigma0)^2 / dy2
         nearest <- which.min(d2)
     } else if (view == "spiciness profile") {
         d2 <- (x - data$spiciness0)^2 / dx2 + (y - data$yProfile)^2 / dy2
@@ -665,8 +665,8 @@ ctdTagAppServer <- function(input, output, session) {
                 box()
             } else if (input$view == "sigma-spiciness") {
                 par(mar = c(3, 3, 1, 1), mgp = c(1.9, 0.5, 0))
-                x <- state$data$sigma0[state$visible]
-                y <- state$data$spiciness0[state$visible]
+                x <- state$data$spiciness0[state$visible]
+                y <- state$data$sigma0[state$visible]
                 with(
                     default$sigmaspiciness,
                     plot(x, y,
