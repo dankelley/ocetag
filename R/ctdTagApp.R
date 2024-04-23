@@ -143,7 +143,8 @@ default <- list(
 #'
 #' @importFrom utils head tail
 ctdTagAppUI <- fluidPage(
-    tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
+    #tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
+    tags$head(uiOutput("css")),
     tags$script(paste0(
         "$(document).on(\"keypress\", function (e) {",
         "Shiny.onInputChange(\"keypress\", e.which);",
@@ -309,7 +310,7 @@ ctdTagAppServer <- function(input, output, session) {
             # dmsg(1 + debug, "FIRST responding to 'i': zoom in\n")
             dmsg(debug, "responding to 'i'\n")
             if (is.null(input$hover$x)) {
-                showNotification("Click in the plot region to make 'i' work")
+                showNotification("Move the cursor over the plot to make 'i' work")
             } else {
                 dmsg(debug, "responding to 'i': zoom in (input$hover$x=", input$hover$x, ")\n")
                 nearestIndex <- findNearestIndex(
@@ -432,6 +433,19 @@ ctdTagAppServer <- function(input, output, session) {
             state$data$yProfile <<- state$data$sigma0
             state$data$ylabProfile <<- expression(sigma[0] * " [" * kg / m^3 * "]")
         }
+    })
+
+    output$css <- renderUI({
+        if (is.null(input$hover$x)) {
+            #cat("TEXT\n", file=stderr())
+            css <- "#shiny-plot-output {cursor: text;}"
+            #css <- "cursor: text;"
+        } else {
+            #cat("CROSSHAIR\n", file=stderr())
+            css <- "#shiny-plot-output {cursor: crosshair;}"
+            #css <- "cursor: crosshair;"
+        }
+        tags$style(HTML(css))
     })
 
     output$fileSelect <- renderUI({
