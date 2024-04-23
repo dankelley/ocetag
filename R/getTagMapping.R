@@ -22,10 +22,5 @@ getTagMapping <- function(dbname = getDatabaseName(), debug = 0) {
         }
         RSQLite::dbDisconnect(con)
     }
-    #>msg <- "Codes and their meanings: "
-    #>for (i in seq_len(nrow(rval))) {
-    #>    msg <- c(msg, rval[i, "value"], "=\"", rval[i, "meaning"], "\"; ", sep="")
-    #> }
-    #>message(msg)
     rval
 } # getTagMapping()

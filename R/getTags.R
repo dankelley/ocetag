@@ -32,11 +32,11 @@ getTags <- function(file = NULL, dbname = getDatabaseName(), debug = 0) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
         if (RSQLite::dbExistsTable(con, "tags")) {
             tags <- RSQLite::dbReadTable(con, "tags")
-            RSQLite::dbDisconnect(con)
             if (!is.null(file)) {
                 tags <- tags[tags$file == file, ]
             }
         }
+        RSQLite::dbDisconnect(con)
     }
     tags
 }

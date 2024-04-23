@@ -132,9 +132,12 @@ default <- list(
     tag = list(cex = 2, lwd = 2, pch = 1)
 )
 
-#' @importFrom shiny actionButton br brushOpts column fluidPage fluidRow getShinyOption p
-#' plotOutput observeEvent reactiveValues renderPlot renderTable renderText renderUI selectInput
-#' showNotification shinyApp shinyOptions stopApp stopApp uiOutput wellPanel
+#' @importFrom shiny actionButton br brushOpts column fluidPage
+#' fluidRow getShinyOption modalButton modalDialog observeEvent
+#' plotOutput reactiveValues removeModal renderPlot renderTable
+#' renderText renderUI selectInput showNotification shinyApp
+#' shinyOptions showModal stopApp stopApp tagList textInput uiOutput
+#' wellPanel
 #'
 #' @importFrom graphics axis box mtext par text
 #'
@@ -389,13 +392,6 @@ ctdTagAppServer <- function(input, output, session) {
         con <- dbConnect(RSQLite::SQLite(), dbname)
         if (RSQLite::dbExistsTable(con, "notes")) {
             state$step <<- state$step + 1 # other shiny elements notice this
-            # msg <- paste0(
-            #    "FIXME: save note \"", input$note,
-            #    "\" for file \"", state$file, "\" at index ",
-            #    if (is.null(state$index)) 0 else state$index
-            # )
-            # dmsg(1, msg, "\n")
-            # showNotification(msg)
             notes <- dbReadTable(con, "notes")
             index <- as.integer(if (is.null(state$index)) 0 else state$index)
             look <- which(notes$file == state$file & notes$index == index)
