@@ -1,3 +1,8 @@
+# ocetag 0.0.4
+
+* Rename `createDatabase()` as [useDatabase()], and remove the
+  [updateDatabase()] call from other package functions.
+
 # ocetag 0.0.3
 
 * [ctdTagApp()] shows spiciness contours on TS diagrams.
@@ -6,11 +11,9 @@
   element of the `tags` table was renamed as `index`.
 * Add [readDatabase()], which may be handy for users who do not know
   SQL.
-* Add [updateDatabase()], which updates existing databases to the
-  present-day format.  All functions in the package that deal with the
-  database call [updateDatabase()] at the start, as a way to ensure
-  backwards compatibility of database files.
-* Rename `ctdtag()` as `ctdTagApp()` to avoid confusion about help pages
+* Add [updateDatabase()], which [useDatabase()] uses to update
+  existing databases to the present-day format.
+* Rename `ctdtag()` as [ctdTagApp()] to avoid confusion about help pages
   for the package, as opposed to help pages for the function.
 * Improve the documentation of several functions, and include a full
   example in the vignette.
@@ -18,7 +21,7 @@
 
 # ocetag 0.0.2
 
-* Change `createDatabase()` and `saveTag()` to handle arbitrary column
+* Change `createDatabase()` and [saveTag()] to handle arbitrary column
   names.
 * Add a vignette showing how to work with CTD data.
 

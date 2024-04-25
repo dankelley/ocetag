@@ -10,58 +10,63 @@ ctdTagApp(
   file = NULL,
   dbprefix = "~/ctdtag",
   mapping = list(),
+  reader = oce::read.oce,
   plotHeight = 500,
   debug = 0
 )
 }
 \arguments{
-\item{path}{character value naming the directory in which to search
-for CTD files.}
+\item{path}{character value naming the directory in which to search for CTD
+files.}
 
-\item{suffix}{character value indicating the file suffix that is
-taken to indicate CTD files.  This is interpreted in a
-case-independent manner, so the default value of \code{"cnv"} would
-match both \code{"station1.cnv"} and \code{"STATION2.CNV"}.}
+\item{suffix}{character value indicating the file suffix that is taken to
+indicate CTD files.  This is interpreted in a case-independent manner, so the
+default value of \code{"cnv"} would match both \code{"station1.cnv"} and
+\code{"STATION2.CNV"}.}
 
-\item{file}{character value that names a file. If this is given,
-then the values of \code{path} and \code{suffix} are ignored, and
-the app focusses on this one file alone.}
+\item{file}{character value that names a file. If this is given, then the
+values of \code{path} and \code{suffix} are ignored, and the app focusses on this one
+file alone.}
 
-\item{dbprefix}{character value for the start of the name of the
-database file.}
+\item{dbprefix}{character value for the start of the name of the database
+file.}
 
-\item{mapping}{a list that connects numerical tag codes to
-character values indicating their meaning.  For example,
-\code{list("mixed-layer depth"=0)} might be used in a study of
-mixed-layer depths.  By default, mappings get set in a simple way,
-with numerical value 0 mapping to string \code{"0"}, etc. The value of
-\code{mapping} is \emph{only} used in creating a new database.  After that,
-its value will be ignored if supplied, to avoid the confusion that
-would arise with multiple intended mappings.  The mapping is stored
-in the database as a table named \code{tagMapping}, the contents of
-which are displayed in the table that appears below the plot.}
+\item{mapping}{a list that connects numerical tag codes to character values
+indicating their meaning.  For example, \code{list("mixed-layer depth"=0)} might
+be used in a study of mixed-layer depths.  By default, mappings get set in a
+simple way, with numerical value 0 mapping to string \code{"0"}, etc. The value of
+\code{mapping} is \emph{only} used in creating a new database.  After that, its value
+will be ignored if supplied, to avoid the confusion that would arise with
+multiple intended mappings.  The mapping is stored in the database as a table
+named \code{tagMapping}, the contents of which are displayed in the table that
+appears below the plot.}
 
-\item{plotHeight}{numeric value for the height of the plot, in
-pixels.}
+\item{reader}{a function used to read the CTD data.  By default, this is
+\code{\link[oce:read.oce]{oce::read.oce()}}. This ch can read common formats such as \code{.cnv} files and
+Argo-flavoured \code{.nc} files, but if it fails, you may supply your own function
+here. For example, you might read a \code{.csv} file and then use \code{\link[oce:as.ctd]{oce::as.ctd()}}
+to create a return value that will suit your purposes.}
+
+\item{plotHeight}{numeric value for the height of the plot, in pixels.}
 
 \item{debug}{integer value indicating a debugging level.  Use 0 for silent
 operation, or any integer exceeding 1 to show some output during the action
 of this function.}
 }
 \description{
-The tags are stored in a SQLite database, for ease of processing in
-R or other software systems.  The analyst's name and the time of
-analysis is stored along with each time stamp, to facilitate
-combining the judgements made by multiple analysts.  A SQLite
-database is used for this storage of tags.
+The tags are stored in a SQLite database, for ease of processing in R or
+other software systems.  The analyst's name and the time of analysis is
+stored along with each time stamp, to facilitate combining the judgements
+made by multiple analysts.  A SQLite database is used for this storage of
+tags.
 }
 \details{
 Instructions are provided with the Help button (or by typing \verb{?}). Tagging
 information is stored in a SQLite database file, by default named
-\code{ctdtag_USERNAME.db}, where \code{USERNAME} is the login name of the analyst.
-If this file does not exist, it is created; otherwise, the existing
-tags (for the file undergoing analysis) are displayed on the plots,
-as a starting point.
+\code{ctdtag_USERNAME.db}, where \code{USERNAME} is the login name of the analyst. If
+this file does not exist, it is created; otherwise, the existing tags (for
+the file undergoing analysis) are displayed on the plots, as a starting
+point.
 }
 \author{
 Dan Kelley

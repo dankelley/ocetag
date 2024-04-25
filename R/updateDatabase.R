@@ -11,7 +11,7 @@
 #' First, the `version` element of the `version` table was changed
 #' from 1 to 2.  Second, the `level` element of the `tags` table was
 #' renamed as `index`.  Both changes are automatically handled by
-#' `createDatabase()`, which alters old files to the new format. All
+#' `useDatabase()`, which alters old files to the new format. All
 #' other functions of the package use the new format, so the system is
 #' backwards-compatible.
 #'
@@ -30,7 +30,7 @@ updateDatabase <- function(dbname = getDatabaseName(), debug = 0) {
         stop("dbname must be a non-empty character value")
     }
     if (!file.exists(dbname)) {
-        stop("No such database exists; use createDatabase() to make one")
+        stop("No such database exists; use useDatabase() to make one")
     }
     debug <- if (debug[1] > 0) 1L else 0L
     # update the db if required to match the present format

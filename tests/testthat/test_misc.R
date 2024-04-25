@@ -18,7 +18,7 @@ test_that("pluralize()", {
 # which means "bad data" in the default tagging scheme.
 test_that("saveTag() and getTags()", {
     dbname <- tempfile()
-    createDatabase(dbname)
+    useDatabase(dbname)
     saveTag("ctd.cnv", index = 1, tag = 2, analyst = "Dan Kelley", dbname = dbname)
     # sql <- system(paste("echo .dump|sqlite3 ", dbname), intern = TRUE)
     # cat(paste(sql, collapse = "\n"))

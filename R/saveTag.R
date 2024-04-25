@@ -6,7 +6,7 @@
 #' data point.
 #'
 #' @param \dots optional extra columns to be stored in the database.
-#' These must have been specified in the [createDatabase()] call
+#' These must have been specified in the [useDatabase()] call
 #' that created the database named in `dbname`.
 #'
 #' @template tagTemplate
@@ -22,7 +22,7 @@
 #' # obviously, this is not what would be done in practice, but
 #' # it is necessary for the example to pass CRAN checks.
 #' dbname <- tempfile() # do not do this in practice
-#' createDatabase(dbname)
+#' useDatabase(dbname)
 #' saveTag("ctd.cnv", index = 1, tag = 2, analyst = "Dan Kelley", dbname = dbname)
 #' tags <- getTags("ctd.cnv", dbname = dbname)
 #' print(tags)
@@ -39,7 +39,6 @@ saveTag <- function(file, index, ..., tag,
     if (!length(dots) && missing(index)) stop("must supply 'index' and/or '...'")
     if (missing(tag)) stop("must supply 'tag'")
     if (missing(dbname)) stop("must supply 'dbname'")
-    updateDatabase(dbname, debug = debug)
     debug <- if (debug[1] > 0) 1L else 0L
     dmsg(
         debug,
@@ -76,7 +75,7 @@ saveTag <- function(file, index, ..., tag,
         stop(
             "Column name mismatch\n",
             "  saveTag() has        c(\"", paste(newnames, collapse = "\",\""), "\")\n",
-            "  createDatabase() had c(\"", paste(oldnames, collapse = "\",\""), "\")"
+            "  useDatabase() had c(\"", paste(oldnames, collapse = "\",\""), "\")"
         )
     }
     RSQLite::dbAppendTable(con, "tags", df)

@@ -36,12 +36,12 @@ dbname <- tempfile() # Do not use a tempfile() in actual work!!
 #  dbname <- "tags.db"
 
 ## -----------------------------------------------------------------------------
-createDatabase(dbname, mapping = mapping, tags = tags)
+useDatabase(dbname, mapping = mapping, tags = tags)
 
 ## -----------------------------------------------------------------------------
 saveTag(name,
     index = index, pressure = d[["pressure"]][index],
-    tag = 1, analyst = "Dan Kelley", dbname = dbname, debug=3
+    tag = 1, analyst = "Dan Kelley", dbname = dbname
 )
 
 ## -----------------------------------------------------------------------------

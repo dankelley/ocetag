@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ocetag</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.4</span>
       </span>
     </div>
 
@@ -81,7 +81,7 @@
       <h1 data-toc-skip>Tagging CTD Data</h1>
                         <h4 data-toc-skip class="author">Dan Kelley (<a href="https://orcid.org/0000-0001-7808-5911" class="external-link uri">https://orcid.org/0000-0001-7808-5911</a>)</h4>
             
-            <h4 data-toc-skip class="date">2024-04-21</h4>
+            <h4 data-toc-skip class="date">2024-04-25</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/dankelley/ocetag/blob/HEAD/vignettes/ctd_tag.Rmd" class="external-link"><code>vignettes/ctd_tag.Rmd</code></a></small>
       <div class="hidden name"><code>ctd_tag.Rmd</code></div>
@@ -147,44 +147,43 @@ we would name a particular file, and we would not erase it!)</p>
 <code class="sourceCode R"><span><span class="co"># Add 'pressure' to the columns in the default 'tags' table.</span></span>
 <span><span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"pressure"</span> <span class="op">=</span> <span class="st">"FLOAT"</span><span class="op">)</span></span></code></pre></div>
 <p>We now have what we need to for the database work. First, we create
-the database. (NB. if <code><a href="../reference/createDatabase.html">createDatabase()</a></code> is called again with
+the database. (NB. if <code><a href="../reference/useDatabase.html">useDatabase()</a></code> is called again with
 the same database name, it will leave the file as it is.)</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dbname</span> <span class="op">&lt;-</span> <span class="st">"tags.db"</span></span></code></pre></div>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/createDatabase.html">createDatabase</a></span><span class="op">(</span><span class="va">dbname</span>, mapping <span class="op">=</span> <span class="va">mapping</span>, tags <span class="op">=</span> <span class="va">tags</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/useDatabase.html">useDatabase</a></span><span class="op">(</span><span class="va">dbname</span>, mapping <span class="op">=</span> <span class="va">mapping</span>, tags <span class="op">=</span> <span class="va">tags</span><span class="op">)</span></span></code></pre></div>
 <p>Saving the tag is simple. Note that the <em>numeric</em> value of the
 tag is saved, <em>not</em> the string value.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/saveTag.html">saveTag</a></span><span class="op">(</span><span class="va">name</span>,</span>
 <span>    index <span class="op">=</span> <span class="va">index</span>, pressure <span class="op">=</span> <span class="va">d</span><span class="op">[[</span><span class="st">"pressure"</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="va">index</span><span class="op">]</span>,</span>
-<span>    tag <span class="op">=</span> <span class="fl">1</span>, analyst <span class="op">=</span> <span class="st">"Dan Kelley"</span>, dbname <span class="op">=</span> <span class="va">dbname</span>, debug<span class="op">=</span><span class="fl">3</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; before adding ..., df is as follows</span></span>
-<span><span class="co">#&gt;      file index tag    analyst        analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 14:17:02</span></span>
-<span><span class="co">#&gt; after possibly adding ..., df is as follows</span></span>
-<span><span class="co">#&gt;      file index tag    analyst        analysisTime pressure</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12   1 Dan Kelley 2024-04-21 14:17:02    4.197</span></span></code></pre></div>
+<span>    tag <span class="op">=</span> <span class="fl">1</span>, analyst <span class="op">=</span> <span class="st">"Dan Kelley"</span>, dbname <span class="op">=</span> <span class="va">dbname</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>Reading the tags later is also simple.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/getTags.html">getTags</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713719822</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1714048419</span></span></code></pre></div>
 <p>The database can be examined as follows</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/readDatabase.html">readDatabase</a></span><span class="op">(</span><span class="va">name</span>, dbname <span class="op">=</span> <span class="va">dbname</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; readDatabase has debug=ctd.cnv</span></span>
 <span><span class="co">#&gt; $mapping</span></span>
 <span><span class="co">#&gt;   value name</span></span>
 <span><span class="co">#&gt; 1     1  MLD</span></span>
 <span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $notes</span></span>
+<span><span class="co">#&gt; [1] file  index note </span></span>
+<span><span class="co">#&gt; &lt;0 rows&gt; (or 0-length row.names)</span></span>
+<span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $tags</span></span>
 <span><span class="co">#&gt;      file index pressure tag    analyst analysisTime</span></span>
-<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1713719822</span></span>
+<span><span class="co">#&gt; 1 ctd.cnv    12    4.197   1 Dan Kelley   1714048419</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $version</span></span>
 <span><span class="co">#&gt;   version</span></span>
-<span><span class="co">#&gt; 1       2</span></span></code></pre></div>
+<span><span class="co">#&gt; 1       3</span></span></code></pre></div>
 <p>For readers who are familiar with SQL syntax, note that typing</p>
 <pre><code>echo .dump | sqlite3 dbname</code></pre>
 <p>in a unix terminal yields as follows.</p>
@@ -193,7 +192,7 @@ tag is saved, <em>not</em> the string value.</p>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `version` (</span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  `version` <span class="dt">INTEGER</span></span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>);</span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> version <span class="kw">VALUES</span>(<span class="dv">2</span>);</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> version <span class="kw">VALUES</span>(<span class="dv">3</span>);</span>
 <span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `mapping` (</span>
 <span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  `value` <span class="dt">INTEGER</span>,</span>
 <span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  `name` TEXT</span>
@@ -201,14 +200,19 @@ tag is saved, <em>not</em> the string value.</p>
 <span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> mapping <span class="kw">VALUES</span>(<span class="dv">1</span>,<span class="st">'MLD'</span>);</span>
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `tags` (</span>
 <span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  `file` TEXT,</span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  `index` <span class="dt">INT</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  `index` <span class="dt">INTEGER</span>,</span>
 <span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  `pressure` <span class="dt">FLOAT</span>,</span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  `tag` <span class="dt">INT</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  `tag` <span class="dt">INTEGER</span>,</span>
 <span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  `analyst` TEXT,</span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  `analysisTime` <span class="dt">TIMESTAMP</span></span>
 <span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>);</span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tags <span class="kw">VALUES</span>(<span class="st">'ctd.cnv'</span>,<span class="dv">12</span>,<span class="fl">4.197000000000000063</span>,<span class="dv">1</span>,<span class="st">'Dan Kelley'</span>,<span class="dv">1713631216</span>);</span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code></pre></div>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> tags <span class="kw">VALUES</span>(<span class="st">'ctd.cnv'</span>,<span class="dv">12</span>,<span class="fl">4.197000000000000063</span>,<span class="dv">1</span>,<span class="st">'Dan Kelley'</span>,<span class="dv">1714042148</span>);</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> `notes` (</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  `file` TEXT,</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  `index` <span class="dt">INTEGER</span>,</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  `note` TEXT</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>);</span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code></pre></div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -226,7 +230,7 @@ tag is saved, <em>not</em> the string value.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.8.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer>

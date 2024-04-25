@@ -1,11 +1,33 @@
 # vim:textwidth=80:expandtab:shiftwidth=4:softtabstop=4
 
-# NOTES TO DEVELOPERS
+# GENERAL NOTES TO DEVELOPERS
 #
-# 1. If you add a new plot type, be sure to edit new code into
-#    the spots marked BOOKMARK 1, 2 and 3.
+# 1. If you add a new plot type, be sure to edit new code to locate
+# the mouse, to display the plot option, and to do the plot.  There
+# may be othere things you need to handle in addition.  The best
+# approach is to search on `"T profile"` and to add code near all the
+# spots where you find that string. Adding a new plot type is not
+# trivial, and doing a partial job may cause more harm than benefit.
+#
+# 2. Use the formatting conventions that you see here, and do not
+# reformat anything other than the specific lines you need to change
+# to accomplish your ends.  In particular, PRs that contain long
+# sequences of lines changed only format (as opposed to action) will
+# be rejected.  The reasons for this are the same as for all
+# open-source projects, so I won't belabour the point, except to say
+# that I will not provide explanations in my rejection of the PR,
+# apart from pointing to this paragraph.
 
-eos <- "gsw" # do NOT change this without changing a LOT of other code, too.
+# THE CODE FOR THIS R-SHINY APP
+
+# Please do NOT change the next line, without adding UI elements to
+# let the user make the choice, and then changing a LOT of code to
+# compensate.  I cannot imagine that the benefit comes anywhere close
+# to the cost of doing this. It would be like switching pressure to
+# millimetres of mercury ... a lot of code would have to be changed,
+# likely wrecking a lot of computation and displays and thus imposing
+# a burden on users who don't happen to align with your quirk.
+eos <- "gsw"
 
 library("oce")
 library("shiny")
@@ -57,7 +79,6 @@ findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
     dmsg(debug, "findNearestIndex(", x, ",", y, "..., view=", view, ")\n")
     dx2 <- diff(usr[1:2])^2
     dy2 <- diff(usr[3:4])^2
-    # start BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
     if (view == "T profile") {
         d2 <- (x - data$CT)^2 / dx2 + (y - data$yProfile)^2 / dy2
         nearest <- which.min(d2)
@@ -82,7 +103,6 @@ findNearestIndex <- function(x, y, usr, data, view, debug = 0) {
     } else {
         stop("view=\"", view, "\" is not handled yet (internal error -- please report)")
     }
-    # end BOOKMARK 1 OF 3 (find index of data point nearest the mouse)
     dmsg(debug, "  returning ", nearest, "\n")
     nearest
 }
@@ -136,14 +156,14 @@ default <- list(
 #' fluidRow getShinyOption HTML modalButton modalDialog observeEvent
 #' plotOutput reactiveValues removeModal renderPlot renderTable
 #' renderText renderUI selectInput showNotification shinyApp
-#' shinyOptions showModal stopApp stopApp tagList textInput uiOutput
+#' shinyOptions showModal stopApp tagList textInput uiOutput
 #' wellPanel
 #'
 #' @importFrom graphics axis box mtext par text
 #'
 #' @importFrom utils head tail
 ctdTagAppUI <- fluidPage(
-    #tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
+    # tags$head(tags$style(HTML(" .well { padding: 2px; min-height: 10px; margin: 2px;} "))),
     tags$head(uiOutput("css")),
     tags$script(paste0(
         "$(document).on(\"keypress\", function (e) {",
@@ -159,7 +179,6 @@ ctdTagAppUI <- fluidPage(
             column(1, actionButton("quit", "Quit")),
             column(2, selectInput("view",
                 label = NULL,
-                # start BOOKMARK 2 OF 3 (show plot option in selection menu)
                 choices = c(
                     "T profile" = "T profile",
                     "S profile" = "S profile",
@@ -182,7 +201,6 @@ ctdTagAppUI <- fluidPage(
                     selected = "pressure"
                 ))
             ),
-            # end BOOKMARK 2 OF 3 (show plot option in selection menu)
             column(2, selectInput("plotType",
                 label = NULL,
                 choices = c("line" = "l", "points" = "p", "line+points" = "o"),
@@ -227,10 +245,15 @@ ctdTagAppServer <- function(input, output, session) {
     dbprefix <- shiny::getShinyOption("dbprefix", default = "~/ctdtag")
     mapping <- shiny::getShinyOption("mapping", default = list())
     plotHeight <- shiny::getShinyOption("plotHeight", default = 200)
+    reader <- shiny::getShinyOption("reader", default = oce::read.oce)
+    if (!is.function(reader)) {
+        stop("'reader' is not a function")
+        stopApp()
+    }
     debug <- shiny::getShinyOption("debug", default = 0)
     # set up database
     dbname <- getDatabaseName(dbprefix = dbprefix)
-    createDatabase(dbname = dbname, mapping = mapping, debug = debug - 1)
+    useDatabase(dbname = dbname, mapping = mapping, debug = debug - 1)
     # 'state', being reactive, creates a gateway between R and the webserver
     # that displays the app. Note that 'step' is used when one R element needs
     # to tell other elements that a change has happened.
@@ -437,13 +460,13 @@ ctdTagAppServer <- function(input, output, session) {
 
     output$css <- renderUI({
         if (is.null(input$hover$x)) {
-            #cat("TEXT\n", file=stderr())
+            # cat("TEXT\n", file=stderr())
             css <- "#shiny-plot-output {cursor: text;}"
-            #css <- "cursor: text;"
+            # css <- "cursor: text;"
         } else {
-            #cat("CROSSHAIR\n", file=stderr())
+            # cat("CROSSHAIR\n", file=stderr())
             css <- "#shiny-plot-output {cursor: crosshair;}"
-            #css <- "cursor: crosshair;"
+            # css <- "cursor: crosshair;"
         }
         tags$style(HTML(css))
     })
@@ -461,15 +484,20 @@ ctdTagAppServer <- function(input, output, session) {
         dmsg(debug, "observing input$fileSelect=\"", input$fileSelect, "\"\n")
         if (nchar(input$fileSelect) == 0L) {
             msg <- paste0("Directory \"", path, "\" has no files with names ending with \"", suffix, "\"\n")
-            stopApp()
             stop(msg)
+            stopApp()
         }
         state$file <<- input$fileSelect
         # message(oce::vectorShow(path))
         # message(oce::vectorShow(state$file))
         state$fileWithPath <<- normalizePath(paste0(path, "/", input$fileSelect))
         # message(oce::vectorShow(state$fileWithPath))
-        ctd <- oce::read.oce(state$fileWithPath)
+        # ctd <- oce::read.oce(state$fileWithPath)
+        ctd <- reader(state$fileWithPath)
+        if (!inherits(ctd, "ctd")) {
+            stop("cannot interpret a CTD object from this data file")
+            stopApp()
+        }
         if (is.na(ctd[["latitude"]])) {
             ctd <- oceSetMetadata(ctd, "latitude", 45)
             warning("added latitude=45 to CTD object\n")
@@ -584,7 +612,6 @@ ctdTagAppServer <- function(input, output, session) {
         {
             state$step # cause a shiny update
             input$yProfile # cause a shiny update
-            # start BOOKMARK 3 OF 3 (create a plot)
             if (input$view == "T profile") {
                 par(mar = c(1, 3.3, 3, 1), mgp = c(1.9, 0.5, 0))
                 x <- state$data$CT[state$visible]
@@ -844,7 +871,6 @@ ctdTagAppServer <- function(input, output, session) {
                 plot(0:1, 0:1, xlab = "", ylab = "", axes = FALSE, type = "n")
                 text(0.5, 0.5, paste("ERROR: plot type", input$view, "not handled yet"))
             }
-            # end BOOKMARK 3 OF 3 (create a plot)
         },
         pointsize = 14
     )
@@ -888,54 +914,66 @@ ctdTagAppServer <- function(input, output, session) {
 
 #' Shiny App for Tagging CTD Features
 #'
-#' The tags are stored in a SQLite database, for ease of processing in
-#' R or other software systems.  The analyst's name and the time of
-#' analysis is stored along with each time stamp, to facilitate
-#' combining the judgements made by multiple analysts.  A SQLite
-#' database is used for this storage of tags.
+#' The tags are stored in a SQLite database, for ease of processing in R or
+#' other software systems.  The analyst's name and the time of analysis is
+#' stored along with each time stamp, to facilitate combining the judgements
+#' made by multiple analysts.  A SQLite database is used for this storage of
+#' tags.
 #'
 #' Instructions are provided with the Help button (or by typing `?`). Tagging
 #' information is stored in a SQLite database file, by default named
-#' `ctdtag_USERNAME.db`, where `USERNAME` is the login name of the analyst.
-#' If this file does not exist, it is created; otherwise, the existing
-#' tags (for the file undergoing analysis) are displayed on the plots,
-#' as a starting point.
+#' `ctdtag_USERNAME.db`, where `USERNAME` is the login name of the analyst. If
+#' this file does not exist, it is created; otherwise, the existing tags (for
+#' the file undergoing analysis) are displayed on the plots, as a starting
+#' point.
 #'
-#' @param path character value naming the directory in which to search
-#' for CTD files.
+#' @param path character value naming the directory in which to search for CTD
+#' files.
 #'
-#' @param suffix character value indicating the file suffix that is
-#' taken to indicate CTD files.  This is interpreted in a
-#' case-independent manner, so the default value of `"cnv"` would
-#' match both `"station1.cnv"` and `"STATION2.CNV"`.
+#' @param suffix character value indicating the file suffix that is taken to
+#' indicate CTD files.  This is interpreted in a case-independent manner, so the
+#' default value of `"cnv"` would match both `"station1.cnv"` and
+#' `"STATION2.CNV"`.
 #'
-#' @param file character value that names a file. If this is given,
-#' then the values of `path` and `suffix` are ignored, and
-#' the app focusses on this one file alone.
+#' @param file character value that names a file. If this is given, then the
+#' values of `path` and `suffix` are ignored, and the app focusses on this one
+#' file alone.
 #'
-#' @param dbprefix character value for the start of the name of the
-#' database file.
+#' @param dbprefix character value for the start of the name of the database
+#' file.
 #'
-#' @param mapping a list that connects numerical tag codes to
-#' character values indicating their meaning.  For example,
-#' `list("mixed-layer depth"=0)` might be used in a study of
-#' mixed-layer depths.  By default, mappings get set in a simple way,
-#' with numerical value 0 mapping to string `"0"`, etc. The value of
-#' `mapping` is *only* used in creating a new database.  After that,
-#' its value will be ignored if supplied, to avoid the confusion that
-#' would arise with multiple intended mappings.  The mapping is stored
-#' in the database as a table named `tagMapping`, the contents of
-#' which are displayed in the table that appears below the plot.
+#' @param mapping a list that connects numerical tag codes to character values
+#' indicating their meaning.  For example, `list("mixed-layer depth"=0)` might
+#' be used in a study of mixed-layer depths.  By default, mappings get set in a
+#' simple way, with numerical value 0 mapping to string `"0"`, etc. The value of
+#' `mapping` is *only* used in creating a new database.  After that, its value
+#' will be ignored if supplied, to avoid the confusion that would arise with
+#' multiple intended mappings.  The mapping is stored in the database as a table
+#' named `tagMapping`, the contents of which are displayed in the table that
+#' appears below the plot.
 #'
-#' @param plotHeight numeric value for the height of the plot, in
-#' pixels.
+#' @param reader a function used to read the CTD data.  By default, this is
+#' [oce::read.oce()]. This ch can read common formats such as `.cnv` files and
+#' Argo-flavoured `.nc` files, but if it fails, you may supply your own function
+#' here. For example, you might read a `.csv` file and then use [oce::as.ctd()]
+#' to create a return value that will suit your purposes.
+#'
+#' @param plotHeight numeric value for the height of the plot, in pixels.
 #'
 #' @template debugTemplate
 #'
 #' @author Dan Kelley
 #'
 #' @export
-ctdTagApp <- function(path = ".", suffix = "cnv", file = NULL, dbprefix = "~/ctdtag", mapping = list(), plotHeight = 500, debug = 0) {
-    shinyOptions(path = path, suffix = suffix, file = file, dbprefix = dbprefix, mapping = mapping, plotHeight = plotHeight, debug = debug)
-    shinyApp(ctdTagAppUI, ctdTagAppServer)
+ctdTagApp <- function(
+    path = ".", suffix = "cnv", file = NULL, dbprefix = "~/ctdtag",
+    mapping = list(), reader = oce::read.oce,
+    plotHeight = 500, debug = 0) {
+    shinyOptions(
+        path = path, suffix = suffix, file = file, dbprefix = dbprefix,
+        mapping = mapping, plotHeight = plotHeight, reader = reader, debug = debug
+    )
+    res <- shinyApp(ctdTagAppUI, ctdTagAppServer)
+    message("next is return value from shinyApp()")
+    print(res)
 }

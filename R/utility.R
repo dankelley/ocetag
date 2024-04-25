@@ -24,7 +24,7 @@ getUserName <- function() {
 #'
 #' @export
 dmsg <- function(debug, ...) {
-    if (debug > 0) cat(file = stderr(), ..., sep = "")
+    if (debug[1] > 0) cat(file = stderr(), ..., sep = "")
 }
 
 #' Get user name

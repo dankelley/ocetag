@@ -15,7 +15,7 @@
 #' # obviously, this is not what would be done in practice, but
 #' # it is necessary for the example to pass CRAN checks.
 #' dbname <- tempfile() # do not do this in practice
-#' createDatabase(dbname)
+#' useDatabase(dbname)
 #' saveTag("ctd.cnv", index = 1, tag = 2, analyst = "Dan Kelley", dbname = dbname)
 #' tags <- getTags("ctd.cnv", dbname = dbname)
 #' print(tags)
@@ -26,7 +26,6 @@
 #' @export
 getTags <- function(file = NULL, dbname = getDatabaseName(), debug = 0) {
     dmsg(debug, "getTags(file=\"", file, "\", dbname=\"", dbname, "\"\n")
-    updateDatabase(dbname, debug = debug)
     tags <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)

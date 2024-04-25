@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ocetag</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.0.4</span>
       </span>
     </div>
 
@@ -58,19 +58,23 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="0.0.4" id="ocetag-004">ocetag 0.0.4<a class="anchor" aria-label="anchor" href="#ocetag-004"></a></h2>
+<ul><li>Rename <code>createDatabase()</code> as [useDatabase()], and remove the [updateDatabase()] call from other package functions.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="0.0.3" id="ocetag-003">ocetag 0.0.3<a class="anchor" aria-label="anchor" href="#ocetag-003"></a></h2>
 <ul><li>[ctdTagApp()] shows spiciness contours on TS diagrams.</li>
 <li>[ctdTagApp()] can plot sigma-spiciness diagrams.</li>
 <li>Database internal version changed from 1 to 2, and the <code>level</code> element of the <code>tags</code> table was renamed as <code>index</code>.</li>
 <li>Add [readDatabase()], which may be handy for users who do not know SQL.</li>
-<li>Add [updateDatabase()], which updates existing databases to the present-day format. All functions in the package that deal with the database call [updateDatabase()] at the start, as a way to ensure backwards compatibility of database files.</li>
-<li>Rename <code>ctdtag()</code> as <code><a href="../reference/ctdTagApp.html">ctdTagApp()</a></code> to avoid confusion about help pages for the package, as opposed to help pages for the function.</li>
+<li>Add [updateDatabase()], which [useDatabase()] uses to update existing databases to the present-day format.</li>
+<li>Rename <code>ctdtag()</code> as [ctdTagApp()] to avoid confusion about help pages for the package, as opposed to help pages for the function.</li>
 <li>Improve the documentation of several functions, and include a full example in the vignette.</li>
 <li>Extend the test suite to cover more functions.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.0.2" id="ocetag-002">ocetag 0.0.2<a class="anchor" aria-label="anchor" href="#ocetag-002"></a></h2>
-<ul><li>Change <code><a href="../reference/createDatabase.html">createDatabase()</a></code> and <code><a href="../reference/saveTag.html">saveTag()</a></code> to handle arbitrary column names.</li>
+<ul><li>Change <code>createDatabase()</code> and [saveTag()] to handle arbitrary column names.</li>
 <li>Add a vignette showing how to work with CTD data.</li>
 </ul></div>
     <div class="section level2">
@@ -91,7 +95,7 @@
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.8.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer></div>

@@ -26,7 +26,7 @@ The following is a history of changes to the database schema.
 First, the \code{version} element of the \code{version} table was changed
 from 1 to 2.  Second, the \code{level} element of the \code{tags} table was
 renamed as \code{index}.  Both changes are automatically handled by
-\code{createDatabase()}, which alters old files to the new format. All
+\code{useDatabase()}, which alters old files to the new format. All
 other functions of the package use the new format, so the system is
 backwards-compatible.
 }

@@ -13,7 +13,6 @@
 #' @export
 getTagMapping <- function(dbname = getDatabaseName(), debug = 0) {
     dmsg(debug, "getTagMapping(dbname=\"", dbname, "\"\n")
-    updateDatabase(dbname, debug = debug)
     rval <- NULL
     if (file.exists(dbname)) {
         con <- dbConnect(RSQLite::SQLite(), dbname)

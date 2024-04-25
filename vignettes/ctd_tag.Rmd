@@ -24,21 +24,23 @@ editor_options:
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-**Abstract.** This vignette shows how to use low-level `ocetag` functions to
-set up a tagging database, how to add entries to it, and how to recover
-entries.
+**Abstract.** This vignette shows how to use low-level `ocetag`
+functions to set up a tagging database, how to add entries to it, and
+how to recover entries.
 
-First, read a CTD file and plot a density profile. You may ignore the warnings,
-one of which indicates that the file has an erroneous start-time, the other of
-which indicates that the file provides temperature on an archaic scale, which
-gets auto-converted by `read.oce()`.
+First, read a CTD file and plot a density profile. You may ignore the
+warnings, one of which indicates that the file has an erroneous
+start-time, the other of which indicates that the file provides
+temperature on an archaic scale, which gets auto-converted by
+`read.oce()`.
 
-In the plot, you may notice evidence of a mixed layer within the top 10m of the
-water column. The code block below is written so that `locator()` will be
-called if you run it interactively and otherwise, as in the building of this
-vignette, the result is inserted directly. Note that the `ctdTagApp()` function
-provides better ways to indicate such points, but the purpose here is to show
-how to use the low-level functions.
+In the plot, you may notice evidence of a mixed layer within the top
+10m of the water column. The code block below is written so that
+`locator()` will be called if you run it interactively and otherwise,
+as in the building of this vignette, the result is inserted directly.
+Note that the `ctdTagApp()` function provides better ways to indicate
+such points, but the purpose here is to show how to use the low-level
+functions.
 
 ```{r}
 library(ocetag)
@@ -61,10 +63,10 @@ points(d[["sigma0"]][index], d[["pressure"]][index], pch = 3, col = 2, cex = 2)
 mtext(sprintf("Red cross at index %d", index), side = 1, col = 2, line = -1)
 ```
 
-Now, we know the point to tag, and the next step is to tag it.  First, we
-create a database.  (To satisfy rules of CRAN packages, here we are creating a
-temporary file and then removing it. In actual use, of course we would name a
-particular file, and we would not erase it!)
+Now, we know the point to tag, and the next step is to tag it.  First,
+we create a database.  (To satisfy rules of CRAN packages, here we are
+creating a temporary file and then removing it. In actual use, of
+course we would name a particular file, and we would not erase it!)
 
 ```{r}
 # Define the list of tags, here just one, for mixed-layer depth.
@@ -76,9 +78,9 @@ mapping <- list("MLD" = 1)
 tags <- list("pressure" = "FLOAT")
 ```
 
-We now have what we need to for the database work.  First, we create the
-database.  (NB. if `createDatabase()` is called again with the same database
-name, it will leave the file as it is.)
+We now have what we need to for the database work.  First, we create
+the database.  (NB. if `useDatabase()` is called again with the
+same database name, it will leave the file as it is.)
 
 ```{r echo=FALSE}
 dbname <- tempfile() # Do not use a tempfile() in actual work!!
@@ -87,15 +89,16 @@ dbname <- tempfile() # Do not use a tempfile() in actual work!!
 dbname <- "tags.db"
 ```
 ```{r}
-createDatabase(dbname, mapping = mapping, tags = tags)
+useDatabase(dbname, mapping = mapping, tags = tags)
 ```
 
 Saving the tag is simple. Note that the *numeric* value of the tag is
 saved, *not* the string value.
+
 ```{r}
 saveTag(name,
     index = index, pressure = d[["pressure"]][index],
-    tag = 1, analyst = "Dan Kelley", dbname = dbname, debug=3
+    tag = 1, analyst = "Dan Kelley", dbname = dbname
 )
 ```
 
@@ -120,7 +123,7 @@ BEGIN TRANSACTION;
 CREATE TABLE `version` (
   `version` INTEGER
 );
-INSERT INTO version VALUES(2);
+INSERT INTO version VALUES(3);
 CREATE TABLE `mapping` (
   `value` INTEGER,
   `name` TEXT
@@ -128,13 +131,18 @@ CREATE TABLE `mapping` (
 INSERT INTO mapping VALUES(1,'MLD');
 CREATE TABLE `tags` (
   `file` TEXT,
-  `index` INT,
+  `index` INTEGER,
   `pressure` FLOAT,
-  `tag` INT,
+  `tag` INTEGER,
   `analyst` TEXT,
   `analysisTime` TIMESTAMP
 );
-INSERT INTO tags VALUES('ctd.cnv',12,4.197000000000000063,1,'Dan Kelley',1713631216);
+INSERT INTO tags VALUES('ctd.cnv',12,4.197000000000000063,1,'Dan Kelley',1714042148);
+CREATE TABLE `notes` (
+  `file` TEXT,
+  `index` INTEGER,
+  `note` TEXT
+);
 COMMIT;
 ```
 

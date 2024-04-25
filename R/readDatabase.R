@@ -15,7 +15,7 @@
 #'
 #' @export
 readDatabase <- function(dbname = getDatabaseName(), debug = 0) {
-    updateDatabase(dbname, debug = debug)
+    message("readDatabase has debug=", debug)
     debug <- if (debug[1] > 0) 1L else 0L
     dmsg(debug, "Opening database file \"", dbname, "\"\n")
     con <- RSQLite::dbConnect(RSQLite::SQLite(), dbname)
